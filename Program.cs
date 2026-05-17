@@ -124,15 +124,6 @@ app.UseAntiforgery();
 
 app.MapBlueprintShell();
 
-// Workaround for embedded mode: StaticShellLoader.LoadInto is only invoked
-// by EditorServerHost.StartAsync (standalone). Embedded consumers must run
-// the scan themselves so [ReaderPage] / [EditorPanel] discovery happens.
-// See docs/BlueprintShell-changes.md (0.1.4 follow-up).
-{
-    var registry = app.Services.GetRequiredService<BlueprintShell.Shell.ShellRegistry>();
-    BlueprintShell.Shell.StaticShellLoader.LoadInto(registry);
-}
-
 app.MapBlueprintShellPwa(new BlueprintShellPwaOptions
 {
     ShortName        = "Encyclopedia",
