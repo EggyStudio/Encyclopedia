@@ -35,7 +35,7 @@ public sealed class GitHubWorkspaceService : IGitHubWorkspaceService
             var user = await gh.User.Current();
             var scopes = gh.Connection.GetLastApiInfo()?.OauthScopes ?? [];
             // Classic PAT exposes scopes; fine-grained tokens return an empty list.
-            // We don't reject fine-grained here — we'll let the repo-create call surface
+            // We don't reject fine-grained here - we'll let the repo-create call surface
             // any permission failure with a clearer message at that point.
             return new TokenValidation(true, user.Login, user.Name, scopes, null);
         }
@@ -213,7 +213,7 @@ public sealed class GitHubWorkspaceService : IGitHubWorkspaceService
         - `.wiki-meta.yml` declares this repo to the encyclopedia.
         - The `encyclopedia-wiki` topic makes it discoverable.
 
-        You don't need to edit anything here by hand — use the Encyclopedia
+        You don't need to edit anything here by hand - use the Encyclopedia
         web app's editor. Identifier: `{identifier}`.
         """;
 }

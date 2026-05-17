@@ -1,4 +1,4 @@
-# Encyclopedia — architecture
+# Encyclopedia - architecture
 
 This document describes the runtime architecture and dataflow of the
 encyclopedia. It is the spec the stubs in `src/Services/**` are written
@@ -42,10 +42,10 @@ The same Blazor app serves both surfaces; route prefix selects the layout:
 
 `IDeviceDetectionService` reads the `User-Agent` server-side. The detection
 is intentionally cheap; we do **not** server-side-render different markup
-based on whether the client is mobile — instead the same DOM ships and CSS
+based on whether the client is mobile - instead the same DOM ships and CSS
 media queries collapse the wiki article grid below 768px.
 
-## 3. Authentication model — "client-side accounts"
+## 3. Authentication model - "client-side accounts"
 
 There is no server-side user table. The entire account lives in a JSON
 file the user keeps:
@@ -65,7 +65,7 @@ file the user keeps:
 
 Trust note: this model means the server cannot verify a user's identity in
 the way a session cookie would. We rely on GitHub itself as the trust
-anchor — every contribution is a commit signed by the user's GitHub
+anchor - every contribution is a commit signed by the user's GitHub
 account (via their token), so authorship is verifiable downstream the
 same way it is on a normal git repo.
 

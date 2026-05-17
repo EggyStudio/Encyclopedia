@@ -53,10 +53,10 @@ with an extension that auto-links any text matching another article's
 identifier (no manual `[[wiki-links]]`). Postgres holds the search index
 (`tsvector` + GIN), the crosslink/backlink tables, version history, and
 the taxonomy (tags/categories/contributors). User accounts are
-**client-side only** — a JSON file the user downloads and re-uploads; the
+**client-side only** - a JSON file the user downloads and re-uploads; the
 server never persists it. Edits are pushed back to GitHub using the user's
 own token, which is never stored. The shell decides which surface to
-render — Wikipedia-like reader for visitors, a BlueprintShell-driven
+render - Wikipedia-like reader for visitors, a BlueprintShell-driven
 editor for authenticated contributors, and a PWA-friendly mobile stack
 when the user-agent indicates a phone.
 
@@ -73,12 +73,12 @@ strategy for zero-downtime.
 
 Required GitHub Actions secrets:
 
-- `FLY_API_TOKEN` — `fly tokens create deploy` output.
+- `FLY_API_TOKEN` - `fly tokens create deploy` output.
 
 Required Fly.io secrets:
 
-- `ConnectionStrings__Postgres` — set automatically by `fly postgres attach`.
-- `GITHUB_TOKEN` — optional, increases Octokit rate limits for discovery.
+- `ConnectionStrings__Postgres` - set automatically by `fly postgres attach`.
+- `GITHUB_TOKEN` - optional, increases Octokit rate limits for discovery.
 
 ## Project layout
 

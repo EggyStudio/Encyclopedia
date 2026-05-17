@@ -41,7 +41,7 @@ else
                 <dl class="profile-dl">
                     <dt>Display name</dt><dd>@account.DisplayName</dd>
                     <dt>Account ID</dt>  <dd><code>@account.Id</code></dd>
-                    <dt>Email</dt>       <dd>@(account.Email ?? "—")</dd>
+                    <dt>Email</dt>       <dd>@(account.Email ?? "-")</dd>
                 </dl>
                 <div class="profile-actions">
                     <BbButton Variant="ButtonVariant.Outline" OnClick="DownloadAccount">Download updated account file</BbButton>
@@ -55,7 +55,7 @@ else
                 <BbCardTitle>GitHub</BbCardTitle>
                 <BbCardDescription>
                     Connect a personal access token with the <code>repo</code> scope.
-                    We use it to create your workspace repository and commit your articles —
+                    We use it to create your workspace repository and commit your articles -
                     we never store it on the server.
                 </BbCardDescription>
             </BbCardHeader>

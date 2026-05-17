@@ -1,4 +1,4 @@
-# .wiki-meta.yml — place at the ROOT of any GitHub repo that wants to be
+# .wiki-meta.yml - place at the ROOT of any GitHub repo that wants to be
 # discoverable by the Encyclopedia. The repo must also have the GitHub
 # topic `encyclopedia-wiki` for the discovery service to find it.
 

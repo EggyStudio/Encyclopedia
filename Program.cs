@@ -44,7 +44,7 @@ builder.Services.AddBlueprintShell(o =>
     o.MobileBreakpointPx = 768;
     o.MobileBehavior     = MobileBehavior.Stacked;
 
-    // Diagnostics endpoint at /_shell/diagnostics — Development only.
+    // Diagnostics endpoint at /_shell/diagnostics - Development only.
     o.EnableDiagnostics  = builder.Environment.IsDevelopment();
 });
 
