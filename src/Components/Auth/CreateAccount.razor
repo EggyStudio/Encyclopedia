@@ -1,0 +1,53 @@
+@namespace Encyclopedia.Components.Auth
+@inject IClientAccountService Accounts
+@inject IJSRuntime JS
+
+<div class="auth-form">
+    <div class="auth-field">
+        <BbLabel For="ca-name">Display name</BbLabel>
+        <BbInput Id="ca-name" @bind-Value="_displayName" Placeholder="Ada Lovelace" />
+    </div>
+
+    <div class="auth-field">
+        <BbLabel For="ca-email">Email <span class="muted">(optional, used as git commit author)</span></BbLabel>
+        <BbInput Id="ca-email" Type="InputType.Email" @bind-Value="_email" Placeholder="ada@example.com" />
+    </div>
+
+    <BbButton OnClick="OnCreate" Disabled="@string.IsNullOrWhiteSpace(_displayName)">
+        Create account file
+    </BbButton>
+
+    @if (_created is not null)
+    {
+        <BbSeparator />
+        <BbAlert>
+            <BbAlertTitle>Account created</BbAlertTitle>
+            <BbAlertDescription>
+                Your account ID is <code>@_created.Id</code>. Save this file somewhere safe — you'll need it on every device you contribute from.
+            </BbAlertDescription>
+        </BbAlert>
+        <BbButton Variant="ButtonVariant.Outline" OnClick="Download">
+            Download @_filename
+        </BbButton>
+    }
+</div>
+
+@code {
+    private string _displayName = "";
+    private string _email       = "";
+    private Encyclopedia.Models.Account? _created;
+    private string _filename = "encyclopedia-account.json";
+
+    private void OnCreate()
+    {
+        if (string.IsNullOrWhiteSpace(_displayName)) return;
+        _created = Accounts.Create(_displayName, string.IsNullOrWhiteSpace(_email) ? null : _email);
+    }
+
+    private async Task Download()
+    {
+        if (_created is null) return;
+        var json = Accounts.Serialize(_created);
+        await JS.InvokeVoidAsync("encyclopedia.downloadText", _filename, json);
+    }
+}

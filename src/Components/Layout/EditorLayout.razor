@@ -1,0 +1,26 @@
+@namespace Encyclopedia.Components.Layout
+@inherits LayoutComponentBase
+
+@*
+   Edit-mode layout. When BlueprintShell change request P0 #2 (ChromeMode) lands
+   this will switch back to the full dock chrome via the shell's own ShellLayout.
+   Until then we render a minimal toolbar + content to avoid the
+   dockable-panel chrome bleeding into reader pages.
+*@
+
+<div class="editor-shell">
+    <header class="editor-topbar">
+        <a class="editor-brand" href="/">Encyclopedia</a>
+        <span class="editor-mode-badge">edit</span>
+        <div class="editor-toolbar-slot" id="editor-toolbar-slot"></div>
+        <nav class="editor-nav">
+            <a href="/profile">Profile</a>
+            <a href="/login">Sign out</a>
+        </nav>
+    </header>
+    <main class="editor-main">
+        @Body
+    </main>
+</div>
+
+<BbPortalHost />

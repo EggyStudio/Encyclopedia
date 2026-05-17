@@ -1,0 +1,21 @@
+@page "/tags"
+@page "/tags/{Tag}"
+@namespace Encyclopedia.Components.Pages
+
+<PageTitle>@(Tag is null ? "Tags" : $"Tag: {Tag}") · Encyclopedia</PageTitle>
+
+@if (Tag is null)
+{
+    <h1>Tags</h1>
+    @* TODO: tag cloud aggregated from article_tags. *@
+    <p class="todo">No tags yet.</p>
+}
+else
+{
+    <h1>Tag: @Tag</h1>
+    @* TODO: list articles where article_tags.tag = Tag. *@
+}
+
+@code {
+    [Parameter] public string? Tag { get; set; }
+}

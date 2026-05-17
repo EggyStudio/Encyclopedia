@@ -1,0 +1,15 @@
+@namespace Encyclopedia.Components.Article
+
+<section class="wiki-sources">
+    <h2>References</h2>
+    <ol>
+        @foreach (var (s, i) in Sources.Select((s, i) => (s, i + 1)))
+        {
+            <li id="ref-@i"><a href="@s" rel="noopener noreferrer">@s</a></li>
+        }
+    </ol>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public string[] Sources { get; set; } = [];
+}

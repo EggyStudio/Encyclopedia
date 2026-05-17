@@ -1,0 +1,18 @@
+@namespace Encyclopedia.Components.Editor
+
+<div class="md-editor">
+    <textarea @bind="_buffer" @bind:event="oninput" rows="30" spellcheck="true"></textarea>
+    <div class="md-editor-bar">
+        <button @onclick="OnSave">Save & push to GitHub</button>
+    </div>
+</div>
+
+@code {
+    private string _buffer = "";
+
+    private Task OnSave()
+    {
+        // TODO: pick up account state, call IGitHubPushService.CommitFileAsync.
+        return Task.CompletedTask;
+    }
+}

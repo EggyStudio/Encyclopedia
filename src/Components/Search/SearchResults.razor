@@ -1,0 +1,23 @@
+@namespace Encyclopedia.Components.Search
+
+@if (Hits.Count == 0)
+{
+    <p class="search-empty">No results.</p>
+}
+else
+{
+    <ul class="search-hits">
+        @foreach (var hit in Hits)
+        {
+            <li>
+                <a class="search-hit-title" href="/wiki/@hit.Identifier">@hit.Title</a>
+                <p class="search-hit-snippet">@((MarkupString)hit.Snippet)</p>
+                <small class="search-hit-source">@hit.SourceId</small>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<Encyclopedia.Services.Search.SearchHit> Hits { get; set; } = [];
+}

@@ -1,0 +1,46 @@
+# fly.toml — Encyclopedia
+#
+# After editing:
+#   fly launch --no-deploy           # first time only
+#   fly secrets set GITHUB_TOKEN=... DATABASE_URL=...
+#   fly deploy                       # or rely on GH Actions
+#
+# Postgres on Fly:
+#   fly postgres create --name encyclopedia-db
+#   fly postgres attach --app encyclopedia encyclopedia-db
+#   # this populates DATABASE_URL automatically; we map it to ConnectionStrings__Postgres below.
+
+app          = "encyclopedia"
+primary_region = "fra"
+
+[build]
+  # GH Actions builds & pushes; deploy pulls the image. Leave [build.image] empty
+  # locally to use `fly deploy --image ghcr.io/...:sha-XXXX` from the workflow.
+
+[env]
+  ASPNETCORE_URLS        = "http://+:8080"
+  ASPNETCORE_ENVIRONMENT = "Production"
+
+[http_service]
+  internal_port = 8080
+  force_https   = true
+  auto_stop_machines   = "stop"
+  auto_start_machines  = true
+  min_machines_running = 1
+  processes            = ["app"]
+
+  [[http_service.checks]]
+    grace_period  = "10s"
+    interval      = "30s"
+    method        = "get"
+    path          = "/health"
+    protocol      = "http"
+    timeout       = "5s"
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus     = 1
+  memory   = "512mb"
+
+[deploy]
+  strategy = "rolling"

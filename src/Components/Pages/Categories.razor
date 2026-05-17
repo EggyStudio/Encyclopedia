@@ -1,0 +1,21 @@
+@page "/categories"
+@page "/categories/{Category}"
+@namespace Encyclopedia.Components.Pages
+
+<PageTitle>@(Category is null ? "Categories" : $"Category: {Category}") · Encyclopedia</PageTitle>
+
+@if (Category is null)
+{
+    <h1>Categories</h1>
+    @* TODO: list distinct categories. *@
+    <p class="todo">No categories yet.</p>
+}
+else
+{
+    <h1>Category: @Category</h1>
+    @* TODO: list articles in this category. *@
+}
+
+@code {
+    [Parameter] public string? Category { get; set; }
+}

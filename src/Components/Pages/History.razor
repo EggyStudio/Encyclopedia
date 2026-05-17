@@ -1,0 +1,37 @@
+@page "/wiki/{Identifier}/history"
+@namespace Encyclopedia.Components.Pages
+@inject IVersionHistoryService Versions
+
+<PageTitle>History: @Identifier · Encyclopedia</PageTitle>
+
+<h1>Revision history: @Identifier</h1>
+<table class="version-table">
+    <thead>
+        <tr><th>Date</th><th>Author</th><th>Message</th><th>±</th><th></th></tr>
+    </thead>
+    <tbody>
+        @foreach (var v in _entries)
+        {
+            <tr>
+                <td>@v.CommittedAt.ToString("yyyy-MM-dd HH:mm")</td>
+                <td>@v.AuthorLogin</td>
+                <td>@v.Message</td>
+                <td>+@v.AdditionLines / -@v.DeletionLines</td>
+                <td><a href="/wiki/@Identifier/diff?to=@v.CommitSha">diff</a></td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    [Parameter] public string Identifier { get; set; } = "";
+
+    private IReadOnlyList<VersionEntry> _entries = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // TODO: load source from registry, call Versions.GetHistoryAsync.
+        _entries = [];
+        await Task.CompletedTask;
+    }
+}

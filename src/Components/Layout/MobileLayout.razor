@@ -1,0 +1,23 @@
+@namespace Encyclopedia.Components.Layout
+@inherits LayoutComponentBase
+
+<div class="mobile-shell">
+    <header class="mobile-topbar">
+        <button class="mobile-menu-btn" aria-label="Menu">☰</button>
+        <a class="mobile-brand" href="/">Encyclopedia</a>
+        <a class="mobile-search-btn" href="/search" aria-label="Search">⌕</a>
+    </header>
+
+    <main class="mobile-main">
+        @Body
+    </main>
+
+    <nav class="mobile-tabbar">
+        <a href="/">Home</a>
+        <a href="/discover">Discover</a>
+        <a href="/search">Search</a>
+        <a href="/profile">Me</a>
+    </nav>
+</div>
+
+<BbPortalHost />

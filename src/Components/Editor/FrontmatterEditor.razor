@@ -1,0 +1,22 @@
+@namespace Encyclopedia.Components.Editor
+
+<fieldset class="fm-editor">
+    <legend>Frontmatter</legend>
+    <label>Identifier <input @bind="_id" /></label>
+    <label>Title      <input @bind="_title" /></label>
+    <label>Summary    <input @bind="_summary" /></label>
+    <label>Tags (comma-separated)       <input @bind="_tags" /></label>
+    <label>Categories (comma-separated) <input @bind="_categories" /></label>
+    <label>Sources (one URL per line)
+        <textarea @bind="_sources" rows="4"></textarea>
+    </label>
+</fieldset>
+
+@code {
+    private string _id         = "";
+    private string _title      = "";
+    private string _summary    = "";
+    private string _tags       = "";
+    private string _categories = "";
+    private string _sources    = "";
+}

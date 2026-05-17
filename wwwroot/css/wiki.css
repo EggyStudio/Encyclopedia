@@ -1,0 +1,68 @@
+/* Encyclopedia overlay styles. The OKLCH variables come from BlueprintShell's
+   default.css; we only add structure + typography for reader pages. */
+
+:root {
+    --reader-max:   72ch;
+    --reader-font:  "Source Serif Pro", "Iowan Old Style", Georgia, "Times New Roman", serif;
+    --reader-sans:  "Inter", system-ui, sans-serif;
+}
+
+body { margin: 0; font-family: var(--reader-sans); }
+
+/* ---------- Reader shell ---------- */
+.reader-shell      { display: grid; grid-template-rows: auto 1fr auto; min-height: 100dvh; }
+.reader-topbar     { display: flex; gap: 1rem; align-items: center; padding: 0.75rem 1.5rem; border-bottom: 1px solid var(--border, #e5e7eb); }
+.reader-brand      { font-weight: 700; text-decoration: none; color: inherit; }
+.reader-nav        { margin-left: auto; display: flex; gap: 1.25rem; }
+.reader-nav a      { color: inherit; text-decoration: none; }
+.reader-nav .reader-cta { font-weight: 600; }
+.reader-main       { max-width: var(--reader-max); margin: 2rem auto; padding: 0 1.5rem; font-family: var(--reader-font); font-size: 1.05rem; line-height: 1.65; }
+.reader-footer     { padding: 1rem; text-align: center; color: var(--muted-foreground, #6b7280); border-top: 1px solid var(--border, #e5e7eb); }
+
+/* ---------- Article ---------- */
+.wiki-article             { display: grid; grid-template-columns: minmax(0, 1fr) 280px; gap: 2rem; }
+.wiki-article-head        { grid-column: 1 / -1; }
+.wiki-article-head h1     { font-size: 2.25rem; line-height: 1.2; margin: 0 0 0.5rem; }
+.wiki-summary             { font-size: 1.15rem; color: var(--muted-foreground, #6b7280); }
+.wiki-toc                 { grid-column: 2; position: sticky; top: 1rem; align-self: start; font-family: var(--reader-sans); font-size: 0.9rem; }
+.wiki-body                { grid-column: 1; }
+.wiki-infobox             { grid-column: 2; padding: 1rem; border: 1px solid var(--border, #e5e7eb); border-radius: 8px; font-family: var(--reader-sans); font-size: 0.9rem; }
+.wiki-infobox dl          { display: grid; grid-template-columns: auto 1fr; gap: 0.25rem 0.75rem; }
+.wiki-sources             { margin-top: 3rem; }
+.wiki-backlinks           { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border, #e5e7eb); }
+
+.crosslink { text-decoration: none; border-bottom: 1px dashed var(--primary, #2563eb); }
+.crosslink:hover { background: var(--primary, #2563eb); color: var(--primary-foreground, #fff); }
+
+/* ---------- Editor shell ---------- */
+.editor-shell    { display: grid; grid-template-rows: auto 1fr; min-height: 100dvh; }
+.editor-topbar   { display: flex; gap: 1rem; align-items: center; padding: 0.5rem 1rem; border-bottom: 1px solid var(--border, #e5e7eb); }
+.editor-mode-badge { padding: 0.1rem 0.5rem; border-radius: 4px; background: var(--accent, #fef3c7); font-size: 0.75rem; }
+.editor-grid    { display: grid; grid-template-columns: 1fr 1fr 280px; gap: 1rem; padding: 1rem; height: 100%; }
+.md-editor textarea { width: 100%; font-family: ui-monospace, monospace; font-size: 13px; }
+
+/* ---------- Mobile shell ---------- */
+.mobile-shell    { display: grid; grid-template-rows: auto 1fr auto; min-height: 100dvh; }
+.mobile-topbar   { display: flex; gap: 0.5rem; align-items: center; padding: 0.5rem 1rem; border-bottom: 1px solid var(--border, #e5e7eb); }
+.mobile-main     { padding: 1rem; }
+.mobile-tabbar   { display: flex; justify-content: space-around; padding: 0.5rem; border-top: 1px solid var(--border, #e5e7eb); }
+
+/* Mobile fallback for wiki article grid */
+@media (max-width: 768px) {
+    .wiki-article  { grid-template-columns: 1fr; }
+    .wiki-toc      { position: static; }
+    .wiki-infobox  { grid-column: 1; }
+}
+
+.todo  { color: var(--muted-foreground, #9ca3af); font-style: italic; }
+.error { color: #b91c1c; }
+.muted { color: var(--muted-foreground, #6b7280); font-weight: 400; }
+
+/* ---------- Auth pages ---------- */
+.auth-page    { font-family: var(--reader-sans); }
+.auth-header  { margin-bottom: 1.5rem; }
+.auth-header h1 { margin: 0 0 0.25rem; font-size: 2rem; }
+.auth-sub     { color: var(--muted-foreground, #6b7280); margin: 0; }
+.auth-grid    { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.25rem; }
+.auth-form    { display: flex; flex-direction: column; gap: 0.85rem; }
+.auth-field   { display: flex; flex-direction: column; gap: 0.35rem; }

@@ -1,0 +1,14 @@
+# Verified user / repo allowlist for the Encyclopedia.
+#
+# - owners: GitHub logins whose every repo with `.wiki-meta.yml` is auto-included
+#   in the encyclopedia with trust = Verified.
+# - repos:  explicit owner/repo pairs that are verified even when the owner is not.
+#
+# Repos discovered via topic search that are NOT listed here start as Discovered;
+# they need a manual opt-in from the Discover page before appearing in the wiki.
+
+owners:
+  # - EggyStudio
+
+repos:
+  # - some-org/some-wiki

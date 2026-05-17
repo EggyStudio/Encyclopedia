@@ -1,0 +1,55 @@
+@namespace Encyclopedia.Components.Auth
+@inject IClientAccountService Accounts
+
+<div class="auth-form">
+    <div class="auth-field">
+        <BbLabel For="au-file">Account file</BbLabel>
+        <InputFile id="au-file" OnChange="OnPick" accept=".json" class="bb-input" />
+    </div>
+
+    @if (_loaded is not null)
+    {
+        <BbAlert>
+            <BbAlertTitle>Signed in</BbAlertTitle>
+            <BbAlertDescription>
+                Welcome back, <strong>@_loaded.DisplayName</strong> <span class="muted">(@_loaded.Id)</span>.
+            </BbAlertDescription>
+        </BbAlert>
+    }
+    else if (_error is not null)
+    {
+        <BbAlert Variant="AlertVariant.Danger">
+            <BbAlertTitle>Couldn't load that file</BbAlertTitle>
+            <BbAlertDescription>@_error</BbAlertDescription>
+        </BbAlert>
+    }
+</div>
+
+@code {
+    private Encyclopedia.Models.Account? _loaded;
+    private string? _error;
+
+    private async Task OnPick(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            using var stream = e.File.OpenReadStream(maxAllowedSize: 256 * 1024);
+            using var reader = new StreamReader(stream);
+            var json = await reader.ReadToEndAsync();
+            var acc  = Accounts.Deserialize(json);
+            if (!Accounts.Validate(acc, out var err))
+            {
+                _error  = err;
+                _loaded = null;
+                return;
+            }
+            _loaded = acc;
+            _error  = null;
+        }
+        catch (Exception ex)
+        {
+            _error  = ex.Message;
+            _loaded = null;
+        }
+    }
+}

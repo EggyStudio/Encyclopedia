@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Encyclopedia</RootNamespace>
+    <AssemblyName>Encyclopedia</AssemblyName>
+    <UserSecretsId>encyclopedia-dev</UserSecretsId>
+  </PropertyGroup>
+
+  <!-- Branding / docs -->
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/"/>
+    <None Include=".github/assets/*" Pack="true" PackagePath="/" Visible="true"/>
+  </ItemGroup>
+
+  <!-- Surface GitHub Actions workflows in the IDE solution view. 
+       Not packed, not copied to output. -->
+  <ItemGroup>
+    <None Include=".github/workflows/*.yml" Pack="false" Visible="true"/>
+    <None Include=".github/workflows/*.yaml" Pack="false" Visible="true"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Shell + UI -->
+    <PackageReference Include="BlueprintShell" Version="0.1.2" />
+
+    <!-- Markdown + YAML -->
+    <PackageReference Include="Markdig" Version="0.37.0" />
+    <PackageReference Include="YamlDotNet" Version="16.2.1" />
+
+    <!-- Persistence -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.2" />
+
+    <!-- GitHub API -->
+    <PackageReference Include="Octokit" Version="13.0.1" />
+
+    <!-- S3-compatible (Cloudflare R2) -->
+    <PackageReference Include="AWSSDK.S3" Version="3.7.405.6" />
+
+    <!-- Mobile / UA detection -->
+    <PackageReference Include="UAParser" Version="3.1.47" />
+  </ItemGroup>
+
+</Project>

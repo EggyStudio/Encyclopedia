@@ -1,0 +1,23 @@
+@page "/wiki/{Identifier}/diff"
+@namespace Encyclopedia.Components.Pages
+@inject IVersionHistoryService Versions
+
+<PageTitle>Diff: @Identifier · Encyclopedia</PageTitle>
+
+<h1>Diff: @Identifier</h1>
+<p>From <code>@From</code> to <code>@To</code></p>
+<pre class="diff">@_diff?.Unified</pre>
+
+@code {
+    [Parameter] public string Identifier { get; set; } = "";
+    [SupplyParameterFromQuery] public string? From { get; set; }
+    [SupplyParameterFromQuery] public string? To   { get; set; }
+
+    private DiffResult? _diff { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // TODO: resolve source + path, call Versions.DiffAsync.
+        await Task.CompletedTask;
+    }
+}

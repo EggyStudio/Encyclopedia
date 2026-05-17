@@ -1,0 +1,59 @@
+@page "/wiki/{Identifier}"
+@namespace Encyclopedia.Components.Pages
+@inject ICrossLinkIndexService CrossLinks
+@inject IArticleParserService Parser
+@inject IAssetResolver AssetResolver
+
+@using ModelArticle = Encyclopedia.Models.Article
+
+<PageTitle>@(_loaded?.Frontmatter.Title ?? Identifier)</PageTitle>
+
+@if (_loaded is null)
+{
+    <p>Loading…</p>
+}
+else
+{
+    <article class="wiki-article">
+        <header class="wiki-article-head">
+            <h1>@_loaded.Frontmatter.Title</h1>
+            @if (!string.IsNullOrEmpty(_loaded.Frontmatter.Summary))
+            {
+                <p class="wiki-summary">@_loaded.Frontmatter.Summary</p>
+            }
+        </header>
+
+        <aside class="wiki-toc">
+            <TableOfContents Markdown="@_loaded.RawMarkdown" />
+        </aside>
+
+        @if (_loaded.Frontmatter.InfoBox is not null)
+        {
+            <InfoBox Data="@_loaded.Frontmatter.InfoBox" SourceId="@_loaded.SourceId" />
+        }
+
+        <div class="wiki-body">
+            <ArticleView Article="_loaded" />
+        </div>
+
+        @if (_loaded.Frontmatter.Sources.Length > 0)
+        {
+            <SourceList Sources="@_loaded.Frontmatter.Sources" />
+        }
+
+        <Backlinks Identifier="@Identifier" />
+    </article>
+}
+
+@code {
+    [Parameter] public string Identifier { get; set; } = "";
+
+    private ModelArticle? _loaded;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // TODO: load article by identifier from db, hand off to ArticleView.
+        _loaded = null;
+        await Task.CompletedTask;
+    }
+}

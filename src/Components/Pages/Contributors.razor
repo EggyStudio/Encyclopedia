@@ -1,0 +1,21 @@
+@page "/contributors"
+@page "/contributors/{Login}"
+@namespace Encyclopedia.Components.Pages
+
+<PageTitle>@(Login is null ? "Contributors" : Login) · Encyclopedia</PageTitle>
+
+@if (Login is null)
+{
+    <h1>Contributors</h1>
+    @* TODO: select github_login, sum(commits) from contributors group by 1 order by 2 desc *@
+    <p class="todo">No contributors indexed.</p>
+}
+else
+{
+    <h1>@Login</h1>
+    @* TODO: articles this user has touched. *@
+}
+
+@code {
+    [Parameter] public string? Login { get; set; }
+}

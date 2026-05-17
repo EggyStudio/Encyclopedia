@@ -1,0 +1,30 @@
+@namespace Encyclopedia.Components.Article
+@inject IAssetResolver AssetResolver
+
+<aside class="wiki-infobox">
+    @if (!string.IsNullOrEmpty(Data.Image))
+    {
+        <figure>
+            @* TODO: resolve via IAssetResolver once we have WikiSource here. *@
+            <img src="@Data.Image" alt="@Data.Caption" />
+            @if (!string.IsNullOrEmpty(Data.Caption))
+            {
+                <figcaption>@Data.Caption</figcaption>
+            }
+        </figure>
+    }
+    @if (Data.Fields.Count > 0)
+    {
+        <dl>
+            @foreach (var (k, v) in Data.Fields)
+            {
+                <dt>@k</dt><dd>@v</dd>
+            }
+        </dl>
+    }
+</aside>
+
+@code {
+    [Parameter, EditorRequired] public Encyclopedia.Models.InfoBoxData Data { get; set; } = default!;
+    [Parameter, EditorRequired] public string SourceId { get; set; } = "";
+}

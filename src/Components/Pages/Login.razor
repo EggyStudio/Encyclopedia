@@ -1,0 +1,42 @@
+@page "/login"
+@namespace Encyclopedia.Components.Pages
+@layout ReaderLayout
+@rendermode InteractiveServer
+
+<PageTitle>Sign in · Encyclopedia</PageTitle>
+
+<div class="auth-page">
+    <header class="auth-header">
+        <h1>Sign in</h1>
+        <p class="auth-sub">
+            Accounts in this encyclopedia live entirely on your device.
+            There is no server-side user database.
+        </p>
+    </header>
+
+    <div class="auth-grid">
+        <BbCard>
+            <BbCardHeader>
+                <BbCardTitle>Create a new account</BbCardTitle>
+                <BbCardDescription>
+                    Generates a JSON file you keep. Bring it with you on every device.
+                </BbCardDescription>
+            </BbCardHeader>
+            <BbCardContent>
+                <CreateAccount />
+            </BbCardContent>
+        </BbCard>
+
+        <BbCard>
+            <BbCardHeader>
+                <BbCardTitle>I already have an account file</BbCardTitle>
+                <BbCardDescription>
+                    Upload your <code>encyclopedia-account.json</code> to sign back in.
+                </BbCardDescription>
+            </BbCardHeader>
+            <BbCardContent>
+                <AccountFileUpload />
+            </BbCardContent>
+        </BbCard>
+    </div>
+</div>

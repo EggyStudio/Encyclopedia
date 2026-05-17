@@ -1,0 +1,26 @@
+@namespace Encyclopedia.Components.Article
+@inject ICrossLinkIndexService CrossLinks
+
+@if (_backlinks.Count > 0)
+{
+    <section class="wiki-backlinks">
+        <h2>What links here</h2>
+        <ul>
+            @foreach (var b in _backlinks)
+            {
+                <li><a href="/wiki/@b.SourceIdentifier">@b.SourceTitle</a></li>
+            }
+        </ul>
+    </section>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Identifier { get; set; } = "";
+
+    private IReadOnlyList<Encyclopedia.Models.Backlink> _backlinks = [];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _backlinks = await CrossLinks.GetBacklinksAsync(Identifier);
+    }
+}

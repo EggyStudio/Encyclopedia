@@ -1,0 +1,35 @@
+@namespace Encyclopedia.Components.Editor
+
+<div class="asset-uploader">
+    <h3>Upload asset</h3>
+    <InputFile OnChange="OnPick" multiple />
+    <p class="muted">Files go to <strong>@(_backendLabel)</strong>, configurable per source via <code>.wiki-meta.yml</code>.</p>
+    @if (_pending.Count > 0)
+    {
+        <ul>
+            @foreach (var f in _pending)
+            {
+                <li>@f.Name (@f.Size bytes)</li>
+            }
+        </ul>
+        <button @onclick="Upload">Upload @_pending.Count file(s)</button>
+    }
+</div>
+
+@code {
+    private readonly List<IBrowserFile> _pending = new();
+    private string _backendLabel = "GitHub (default)";
+
+    private void OnPick(InputFileChangeEventArgs e)
+    {
+        _pending.Clear();
+        _pending.AddRange(e.GetMultipleFiles(20));
+    }
+
+    private Task Upload()
+    {
+        // TODO: stream each file to IAssetResolver -> backend provider.
+        _pending.Clear();
+        return Task.CompletedTask;
+    }
+}

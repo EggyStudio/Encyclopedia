@@ -1,0 +1,14 @@
+@namespace Encyclopedia.Components.Search
+
+<form class="search-bar" @onsubmit="Submit" @onsubmit:preventDefault="true">
+    <input type="search" @bind="_q" @bind:event="oninput" placeholder="Search articles…" />
+    <button type="submit">Search</button>
+</form>
+
+@code {
+    [Parameter] public EventCallback<(string Query, Encyclopedia.Services.Search.SearchFilters Filters)> OnQuery { get; set; }
+
+    private string _q = "";
+
+    private Task Submit() => OnQuery.InvokeAsync((_q, new Encyclopedia.Services.Search.SearchFilters()));
+}

@@ -1,0 +1,12 @@
+@page "/profile"
+@namespace Encyclopedia.Components.Pages
+
+<PageTitle>Profile · Encyclopedia</PageTitle>
+
+<h1>Profile</h1>
+<p>This view shows the contents of the locally-loaded account file. Nothing here is sent to the server.</p>
+
+@* TODO: read AccountState cascading value, render fields editable, expose
+   "Add GitHub token", "Add Cloudflare R2 keys", "Download updated file". *@
+<p class="todo">No account loaded.</p>
+<p><a href="/login">Sign in</a></p>

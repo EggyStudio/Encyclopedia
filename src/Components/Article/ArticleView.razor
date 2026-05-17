@@ -1,0 +1,20 @@
+@namespace Encyclopedia.Components.Article
+@inject IArticleParserService Parser
+@inject ICrossLinkIndexService CrossLinks
+@inject IAssetResolver AssetResolver
+
+@((MarkupString)_html)
+
+@code {
+    [Parameter, EditorRequired] public Encyclopedia.Models.Article Article { get; set; } = default!;
+
+    private string _html = "";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // TODO: build ArticleRenderContext from CrossLinks.GetIdentifierIndexAsync()
+        // + Assets.BuildIndexAsync(source). Then RenderHtml().
+        _html = "";
+        await Task.CompletedTask;
+    }
+}

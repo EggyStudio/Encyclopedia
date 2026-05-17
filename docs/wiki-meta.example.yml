@@ -1,0 +1,32 @@
+# .wiki-meta.yml — place at the ROOT of any GitHub repo that wants to be
+# discoverable by the Encyclopedia. The repo must also have the GitHub
+# topic `encyclopedia-wiki` for the discovery service to find it.
+
+identifier:  example-wiki        # globally unique slug used in URLs (/wiki/{identifier}/...)
+title:       The Example Wiki
+description: A sample wiki demonstrating the .wiki-meta.yml format.
+owner:       octocat             # GitHub login of the maintainer
+license:     CC-BY-4.0
+language:    en
+homepage:    https://example.com
+
+tags:        [computing, history]
+categories:  [Reference]
+
+# Where article files live in this repo. Each .md file in articlesDir
+# becomes one wiki article. Files in assetsDir/ are referenced from
+# articles via plain relative links (assets/images/foo.png) and resolved
+# at render time.
+articlesDir: articles
+assetsDir:   assets
+
+# Asset storage backend. "github" uses raw.githubusercontent.com for free
+# (within GitHub's 1GB soft limit). "r2" pulls from a Cloudflare R2 bucket.
+assets: github
+
+# Required if `assets: r2`. The Encyclopedia uses these to compute public URLs;
+# the bucket itself must be readable from `publicBase`.
+# r2:
+#   accountId:  your-cf-account-id
+#   bucketName: example-wiki-assets
+#   publicBase: https://pub-xxxxxxxx.r2.dev

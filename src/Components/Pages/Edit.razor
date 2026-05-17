@@ -1,0 +1,23 @@
+@page "/edit/{*ArticlePath}"
+@namespace Encyclopedia.Components.Pages
+@layout EditorLayout
+
+<PageTitle>Edit: @ArticlePath · Encyclopedia</PageTitle>
+
+<div class="editor-grid">
+    <section class="editor-pane">
+        <FrontmatterEditor />
+        <MarkdownEditor />
+    </section>
+    <aside class="preview-pane">
+        @* TODO: live-preview using ArticleView with the current buffer. *@
+        <p class="todo">Live preview will render here.</p>
+    </aside>
+    <aside class="asset-pane">
+        <AssetUploader />
+    </aside>
+</div>
+
+@code {
+    [Parameter] public string? ArticlePath { get; set; }
+}

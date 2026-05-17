@@ -1,0 +1,23 @@
+@namespace Encyclopedia.Components.Article
+
+<nav class="wiki-toc-nav" aria-label="Table of contents">
+    <h2>Contents</h2>
+    <ol>
+        @foreach (var h in _headings)
+        {
+            <li class="toc-level-@h.Level"><a href="#@h.Anchor">@h.Text</a></li>
+        }
+    </ol>
+</nav>
+
+@code {
+    [Parameter, EditorRequired] public string Markdown { get; set; } = "";
+
+    private List<(int Level, string Text, string Anchor)> _headings = new();
+
+    protected override void OnParametersSet()
+    {
+        // TODO: walk Markdig AST to extract headings + slugified anchors.
+        _headings = new();
+    }
+}

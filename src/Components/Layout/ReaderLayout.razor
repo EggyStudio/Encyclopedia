@@ -1,0 +1,32 @@
+@namespace Encyclopedia.Components.Layout
+@inherits LayoutComponentBase
+@inject IDeviceDetectionService DeviceDetection
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var ua       = HttpContextAccessor.HttpContext?.Request.Headers.UserAgent.ToString();
+    var isMobile = DeviceDetection.IsMobile(ua);
+}
+
+<div class="reader-shell @(isMobile ? "is-mobile" : "is-desktop")">
+    <header class="reader-topbar">
+        <a class="reader-brand" href="/">Encyclopedia</a>
+        <nav class="reader-nav">
+            <a href="/discover">Discover</a>
+            <a href="/search">Search</a>
+            <a href="/tags">Tags</a>
+            <a href="/categories">Categories</a>
+            <a href="/login" class="reader-cta">Contribute</a>
+        </nav>
+    </header>
+
+    <main class="reader-main">
+        @Body
+    </main>
+
+    <footer class="reader-footer">
+        <small>Content licensed per article — see source repos. Built with BlueprintShell + BlazorBlueprint.</small>
+    </footer>
+</div>
+
+<BbPortalHost />

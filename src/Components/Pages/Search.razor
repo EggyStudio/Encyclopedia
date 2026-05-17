@@ -1,0 +1,19 @@
+@page "/search"
+@namespace Encyclopedia.Components.Pages
+@inject IFullTextSearchService SearchService
+
+<PageTitle>Search · Encyclopedia</PageTitle>
+
+<h1>Search</h1>
+<SearchBar OnQuery="OnQuery" />
+<SearchResults Hits="_hits" />
+
+@code {
+    private IReadOnlyList<SearchHit> _hits = [];
+
+    private async Task OnQuery((string Query, SearchFilters Filters) e)
+    {
+        // TODO
+        _hits = await SearchService.SearchAsync(e.Query, e.Filters);
+    }
+}
