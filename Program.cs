@@ -28,13 +28,16 @@ builder.Services.AddBlueprintShell(o =>
 {
     o.AppTitle = "Encyclopedia";
 
-    // Reader paths render plain Blazor without the dock chrome; editor paths
-    // get the full dockable shell. Falls back to Full for anything we miss.
-    o.ChromeFor = ctx =>
+    // DI-aware chrome resolution. Anonymous visitors see the bare reader;
+    // authenticated contributors get the editor shell only when they're on
+    // an /edit/* route, so reader pages stay clean for signed-in users too.
+    o.ChromeForServices = (ctx, sp) =>
     {
         var path = ctx.Request.Path.Value ?? "";
-        if (path.StartsWith("/edit", StringComparison.OrdinalIgnoreCase)) return ShellChromeMode.Full;
-        return ShellChromeMode.Hidden;
+        if (!path.StartsWith("/edit", StringComparison.OrdinalIgnoreCase))
+            return ShellChromeMode.Hidden;
+        var auth = sp.GetRequiredService<IShellAuthContext>();
+        return auth.IsAuthenticated ? ShellChromeMode.Full : ShellChromeMode.Minimal;
     };
 
     // Stack docks below 768px (helps the editor view on phones).
@@ -120,6 +123,15 @@ app.UseRouting();
 app.UseAntiforgery();
 
 app.MapBlueprintShell();
+
+// Workaround for embedded mode: StaticShellLoader.LoadInto is only invoked
+// by EditorServerHost.StartAsync (standalone). Embedded consumers must run
+// the scan themselves so [ReaderPage] / [EditorPanel] discovery happens.
+// See docs/BlueprintShell-changes.md (0.1.4 follow-up).
+{
+    var registry = app.Services.GetRequiredService<BlueprintShell.Shell.ShellRegistry>();
+    BlueprintShell.Shell.StaticShellLoader.LoadInto(registry);
+}
 
 app.MapBlueprintShellPwa(new BlueprintShellPwaOptions
 {
