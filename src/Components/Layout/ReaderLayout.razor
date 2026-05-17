@@ -1,7 +1,11 @@
 @namespace Encyclopedia.Components.Layout
 @inherits LayoutComponentBase
+@implements IDisposable
+
 @inject IDeviceDetectionService DeviceDetection
 @inject IHttpContextAccessor HttpContextAccessor
+@inject AccountState State
+@inject IJSRuntime JS
 
 @{
     var ua       = HttpContextAccessor.HttpContext?.Request.Headers.UserAgent.ToString();
@@ -16,7 +20,15 @@
             <a href="/search">Search</a>
             <a href="/tags">Tags</a>
             <a href="/categories">Categories</a>
-            <a href="/login" class="reader-cta">Contribute</a>
+            @if (State.IsSignedIn)
+            {
+                <a href="/new" class="reader-cta">New article</a>
+                <a href="/profile">@State.Current!.DisplayName</a>
+            }
+            else
+            {
+                <a href="/login" class="reader-cta">Contribute</a>
+            }
         </nav>
     </header>
 
@@ -30,3 +42,13 @@
 </div>
 
 <BbPortalHost />
+
+@code {
+    protected override void OnInitialized() => State.Changed += StateHasChanged;
+    public void Dispose() => State.Changed -= StateHasChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) await State.EnsureHydratedAsync(JS);
+    }
+}

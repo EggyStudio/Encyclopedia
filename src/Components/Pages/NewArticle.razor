@@ -1,0 +1,227 @@
+@page "/new"
+@namespace Encyclopedia.Components.Pages
+@layout ReaderLayout
+@rendermode InteractiveServer
+
+@inject AccountState State
+@inject IGitHubPushService Push
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<PageTitle>New article · Encyclopedia</PageTitle>
+
+@if (!_hydrationAttempted)
+{
+    <p>Loading…</p>
+}
+else if (State.Current is null || State.Current.Workspace is null)
+{
+    <BbCard>
+        <BbCardHeader>
+            <BbCardTitle>Set up your workspace first</BbCardTitle>
+            <BbCardDescription>You need a connected GitHub account and a workspace repo before writing articles.</BbCardDescription>
+        </BbCardHeader>
+        <BbCardContent>
+            <BbButton OnClick="@(() => Nav.NavigateTo("/profile"))">Go to profile</BbButton>
+        </BbCardContent>
+    </BbCard>
+}
+else
+{
+    <BbCard>
+        <BbCardHeader>
+            <BbCardTitle>Write a new article</BbCardTitle>
+            <BbCardDescription>
+                Saving commits to <a href="@State.Current.Workspace.HtmlUrl" target="_blank" rel="noopener">
+                @State.Current.Workspace.Owner/@State.Current.Workspace.Repo</a>
+                on branch <code>@State.Current.Workspace.DefaultBranch</code>.
+            </BbCardDescription>
+        </BbCardHeader>
+        <BbCardContent>
+            <div class="new-article-form">
+                <div class="auth-field">
+                    <BbLabel For="na-title">Title</BbLabel>
+                    <BbInput Id="na-title" @bind-Value="_title" @bind-Value:event="oninput" Placeholder="Cathode ray tube" />
+                </div>
+
+                <div class="auth-field">
+                    <BbLabel For="na-id">Identifier <span class="muted">(URL slug — auto from title; edit to override)</span></BbLabel>
+                    <BbInput Id="na-id" @bind-Value="_identifier" Placeholder="cathode-ray-tube" />
+                </div>
+
+                <div class="auth-field">
+                    <BbLabel For="na-summary">Summary <span class="muted">(one sentence; shown in search results)</span></BbLabel>
+                    <BbInput Id="na-summary" @bind-Value="_summary" Placeholder="A short description of the article." />
+                </div>
+
+                <div class="auth-field">
+                    <BbLabel For="na-tags">Tags <span class="muted">(comma-separated)</span></BbLabel>
+                    <BbInput Id="na-tags" @bind-Value="_tags" Placeholder="electronics, history" />
+                </div>
+
+                <div class="auth-field">
+                    <BbLabel For="na-cats">Categories <span class="muted">(comma-separated)</span></BbLabel>
+                    <BbInput Id="na-cats" @bind-Value="_categories" Placeholder="Technology" />
+                </div>
+
+                <div class="auth-field">
+                    <BbLabel For="na-body">Markdown body</BbLabel>
+                    <textarea id="na-body"
+                              class="bb-textarea new-article-body"
+                              rows="18"
+                              spellcheck="true"
+                              @bind="_body"
+                              placeholder="# Heading&#10;&#10;Write your article in Markdown here.&#10;Links to other articles will be created automatically."></textarea>
+                </div>
+
+                <div class="auth-actions">
+                    <BbButton OnClick="Save"
+                              Disabled="@(_busy || string.IsNullOrWhiteSpace(_title) || string.IsNullOrWhiteSpace(_body))">
+                        @(_busy ? "Saving…" : "Publish article")
+                    </BbButton>
+                    <BbButton Variant="ButtonVariant.Outline" OnClick="@(() => Nav.NavigateTo("/profile"))">Cancel</BbButton>
+                </div>
+
+                @if (_result is not null)
+                {
+                    <BbAlert Variant="AlertVariant.Success">
+                        <BbAlertTitle>Published</BbAlertTitle>
+                        <BbAlertDescription>
+                            Commit <code>@_result.Sha.Substring(0, 8)</code> ·
+                            <a href="@_result.CommitUrl" target="_blank" rel="noopener">view on GitHub</a>.
+                            The article will appear after the next discovery sync.
+                        </BbAlertDescription>
+                    </BbAlert>
+                }
+
+                @if (_error is not null)
+                {
+                    <BbAlert Variant="AlertVariant.Danger">
+                        <BbAlertTitle>Couldn't publish</BbAlertTitle>
+                        <BbAlertDescription>@_error</BbAlertDescription>
+                    </BbAlert>
+                }
+            </div>
+        </BbCardContent>
+    </BbCard>
+}
+
+@code {
+    private bool   _hydrationAttempted;
+    private bool   _busy;
+    private string _title       = "";
+    private string _identifier  = "";
+    private string _summary     = "";
+    private string _tags        = "";
+    private string _categories  = "";
+    private string _body        = "";
+    private string? _error;
+    private CommitResult? _result;
+    private string _lastTitleForSlug = "";
+
+    protected override void OnInitialized() => State.Changed += StateHasChanged;
+    public void Dispose() => State.Changed -= StateHasChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await State.EnsureHydratedAsync(JS);
+            _hydrationAttempted = true;
+            StateHasChanged();
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        // Auto-populate identifier from title until the user manually edits it.
+        if (_identifier == Slugify(_lastTitleForSlug) || string.IsNullOrEmpty(_identifier))
+        {
+            _identifier = Slugify(_title);
+            _lastTitleForSlug = _title;
+        }
+    }
+
+    private async Task Save()
+    {
+        var account = State.Current;
+        var ws      = account?.Workspace;
+        var token   = State.GithubToken;
+        if (account is null || ws is null || string.IsNullOrEmpty(token)) return;
+
+        _busy = true; _error = null; _result = null;
+        try
+        {
+            var slug = string.IsNullOrWhiteSpace(_identifier) ? Slugify(_title) : Slugify(_identifier);
+            var md   = BuildMarkdown(slug, _title, _summary, _tags, _categories, _body);
+            var path = $"articles/{slug}.md";
+
+            var source = new Encyclopedia.Models.WikiSource
+            {
+                Id            = $"{ws.Owner}/{ws.Repo}",
+                Owner         = ws.Owner,
+                Repo          = ws.Repo,
+                DefaultBranch = ws.DefaultBranch,
+                Trust         = Encyclopedia.Models.WikiSourceTrust.Verified,
+                LastSyncedAt  = DateTime.UtcNow,
+                Meta          = new Encyclopedia.Models.WikiMeta
+                {
+                    Identifier = ws.Identifier,
+                    Title      = $"{account.DisplayName}'s Encyclopedia",
+                    Owner      = ws.Owner,
+                },
+            };
+
+            _result = await Push.CommitFileAsync(
+                source,
+                path,
+                System.Text.Encoding.UTF8.GetBytes(md),
+                commitMessage: $"article: {_title}",
+                authorName:    account.DisplayName,
+                authorEmail:   account.Email ?? $"{account.GithubLogin}@users.noreply.github.com",
+                githubToken:   token);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally { _busy = false; }
+    }
+
+    private static string BuildMarkdown(string identifier, string title, string summary, string tags, string categories, string body)
+    {
+        string Esc(string s) => s.Replace("\"", "\\\"");
+        string YamlList(string commaSep)
+        {
+            var items = commaSep.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            return items.Length == 0 ? "[]" : "[" + string.Join(", ", items.Select(i => $"\"{Esc(i)}\"")) + "]";
+        }
+
+        var fm = new System.Text.StringBuilder();
+        fm.AppendLine("---");
+        fm.AppendLine($"identifier: {identifier}");
+        fm.AppendLine($"title: \"{Esc(title)}\"");
+        if (!string.IsNullOrWhiteSpace(summary)) fm.AppendLine($"summary: \"{Esc(summary)}\"");
+        fm.AppendLine($"tags: {YamlList(tags)}");
+        fm.AppendLine($"categories: {YamlList(categories)}");
+        fm.AppendLine($"published: {DateTime.UtcNow:yyyy-MM-ddTHH:mm:ssZ}");
+        fm.AppendLine("---");
+        fm.AppendLine();
+        fm.Append(body);
+        if (!body.EndsWith('\n')) fm.AppendLine();
+        return fm.ToString();
+    }
+
+    private static string Slugify(string s)
+    {
+        if (string.IsNullOrWhiteSpace(s)) return "";
+        var sb = new System.Text.StringBuilder(s.Length);
+        var lastDash = false;
+        foreach (var c in s.Trim().ToLowerInvariant())
+        {
+            if (char.IsLetterOrDigit(c)) { sb.Append(c); lastDash = false; }
+            else if (!lastDash)          { sb.Append('-'); lastDash = true; }
+        }
+        return sb.ToString().Trim('-');
+    }
+}

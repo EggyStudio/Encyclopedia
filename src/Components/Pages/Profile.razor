@@ -1,12 +1,230 @@
 @page "/profile"
 @namespace Encyclopedia.Components.Pages
+@layout ReaderLayout
+@rendermode InteractiveServer
+
+@inject AccountState State
+@inject IGitHubWorkspaceService Workspace
+@inject NavigationManager Nav
+@inject IJSRuntime JS
 
 <PageTitle>Profile · Encyclopedia</PageTitle>
 
-<h1>Profile</h1>
-<p>This view shows the contents of the locally-loaded account file. Nothing here is sent to the server.</p>
+@if (!_hydrationAttempted)
+{
+    <p>Loading…</p>
+}
+else if (State.Current is null)
+{
+    <BbCard>
+        <BbCardHeader>
+            <BbCardTitle>You're not signed in</BbCardTitle>
+            <BbCardDescription>Create an account or upload your account file to contribute.</BbCardDescription>
+        </BbCardHeader>
+        <BbCardContent>
+            <BbButton OnClick="@(() => Nav.NavigateTo("/login"))">Go to sign in</BbButton>
+        </BbCardContent>
+    </BbCard>
+}
+else
+{
+    var account = State.Current;
 
-@* TODO: read AccountState cascading value, render fields editable, expose
-   "Add GitHub token", "Add Cloudflare R2 keys", "Download updated file". *@
-<p class="todo">No account loaded.</p>
-<p><a href="/login">Sign in</a></p>
+    <div class="profile-grid">
+        <BbCard>
+            <BbCardHeader>
+                <BbCardTitle>Your account</BbCardTitle>
+                <BbCardDescription>This lives only on your device.</BbCardDescription>
+            </BbCardHeader>
+            <BbCardContent>
+                <dl class="profile-dl">
+                    <dt>Display name</dt><dd>@account.DisplayName</dd>
+                    <dt>Account ID</dt>  <dd><code>@account.Id</code></dd>
+                    <dt>Email</dt>       <dd>@(account.Email ?? "—")</dd>
+                </dl>
+                <div class="profile-actions">
+                    <BbButton Variant="ButtonVariant.Outline" OnClick="DownloadAccount">Download updated account file</BbButton>
+                    <BbButton Variant="ButtonVariant.Ghost"   OnClick="SignOut">Sign out</BbButton>
+                </div>
+            </BbCardContent>
+        </BbCard>
+
+        <BbCard>
+            <BbCardHeader>
+                <BbCardTitle>GitHub</BbCardTitle>
+                <BbCardDescription>
+                    Connect a personal access token with the <code>repo</code> scope.
+                    We use it to create your workspace repository and commit your articles —
+                    we never store it on the server.
+                </BbCardDescription>
+            </BbCardHeader>
+            <BbCardContent>
+                @if (string.IsNullOrEmpty(account.GithubToken))
+                {
+                    <div class="auth-field">
+                        <BbLabel For="gh-token">Personal access token</BbLabel>
+                        <BbInput Id="gh-token" Type="InputType.Password" @bind-Value="_tokenInput" Placeholder="ghp_…" />
+                        <small class="muted">
+                            <a href="https://github.com/settings/tokens/new?scopes=repo&description=Encyclopedia%20workspace" target="_blank" rel="noopener">
+                                Create a token on GitHub →
+                            </a>
+                        </small>
+                    </div>
+                    <BbButton OnClick="ConnectToken"
+                              Disabled="@(_busy || string.IsNullOrWhiteSpace(_tokenInput))">
+                        @(_busy ? "Validating…" : "Connect GitHub")
+                    </BbButton>
+                }
+                else
+                {
+                    <BbAlert Variant="AlertVariant.Success">
+                        <BbAlertTitle>Connected as @@@account.GithubLogin</BbAlertTitle>
+                        <BbAlertDescription>Token stored locally; never sent to our server except per-request to GitHub.</BbAlertDescription>
+                    </BbAlert>
+                    <BbButton Variant="ButtonVariant.Outline" OnClick="DisconnectToken">Disconnect</BbButton>
+                }
+
+                @if (_error is not null)
+                {
+                    <BbAlert Variant="AlertVariant.Danger">
+                        <BbAlertTitle>Couldn't connect</BbAlertTitle>
+                        <BbAlertDescription>@_error</BbAlertDescription>
+                    </BbAlert>
+                }
+            </BbCardContent>
+        </BbCard>
+
+        <BbCard>
+            <BbCardHeader>
+                <BbCardTitle>Workspace repository</BbCardTitle>
+                <BbCardDescription>
+                    Your articles live in a GitHub repo we create automatically.
+                    You don't need to set anything up on GitHub yourself.
+                </BbCardDescription>
+            </BbCardHeader>
+            <BbCardContent>
+                @if (account.Workspace is { } ws)
+                {
+                    <dl class="profile-dl">
+                        <dt>Repo</dt>       <dd><a href="@ws.HtmlUrl" target="_blank" rel="noopener">@ws.Owner/@ws.Repo</a></dd>
+                        <dt>Branch</dt>     <dd><code>@ws.DefaultBranch</code></dd>
+                        <dt>Identifier</dt> <dd><code>@ws.Identifier</code></dd>
+                        <dt>Created</dt>    <dd>@ws.CreatedAt.ToString("yyyy-MM-dd")</dd>
+                    </dl>
+                    <div class="profile-actions">
+                        <BbButton OnClick="@(() => Nav.NavigateTo("/new"))">Write a new article</BbButton>
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(account.GithubToken))
+                {
+                    <p>No workspace yet. We'll create a repo named <code>@GitHubWorkspaceService.DefaultRepoName</code> under <strong>@@@account.GithubLogin</strong>, push a starter <code>.wiki-meta.yml</code>, and apply the <code>@GitHubWorkspaceService.DiscoveryTopic</code> topic so it's discoverable.</p>
+                    <BbButton OnClick="CreateWorkspace" Disabled="@_busy">
+                        @(_busy ? "Creating…" : "Create my workspace")
+                    </BbButton>
+                }
+                else
+                {
+                    <p class="muted">Connect GitHub first.</p>
+                }
+
+                @if (_workspaceError is not null)
+                {
+                    <BbAlert Variant="AlertVariant.Danger">
+                        <BbAlertTitle>Couldn't create the workspace</BbAlertTitle>
+                        <BbAlertDescription>@_workspaceError</BbAlertDescription>
+                    </BbAlert>
+                }
+            </BbCardContent>
+        </BbCard>
+    </div>
+}
+
+@code {
+    private bool   _hydrationAttempted;
+    private bool   _busy;
+    private string _tokenInput     = "";
+    private string? _error;
+    private string? _workspaceError;
+
+    protected override void OnInitialized() => State.Changed += StateHasChanged;
+    public void Dispose() => State.Changed -= StateHasChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await State.EnsureHydratedAsync(JS);
+            _hydrationAttempted = true;
+            StateHasChanged();
+        }
+    }
+
+    private async Task ConnectToken()
+    {
+        if (string.IsNullOrWhiteSpace(_tokenInput)) return;
+        _busy  = true;
+        _error = null;
+        var token = _tokenInput.Trim();
+        try
+        {
+            var v = await Workspace.ValidateTokenAsync(token);
+            if (!v.Ok)
+            {
+                _error = v.Error ?? "Unknown error.";
+                return;
+            }
+            if (v.Scopes.Count > 0 && !v.Scopes.Any(s => s is "repo" or "public_repo"))
+            {
+                _error = $"Token is missing the 'repo' scope. Granted: {string.Join(", ", v.Scopes)}.";
+                return;
+            }
+            await State.UpdateAsync(a => a with { GithubLogin = v.Login, GithubToken = token }, JS);
+            _tokenInput = "";
+
+            // Pick up an existing workspace if the user already has one.
+            var existing = await Workspace.FindExistingWorkspaceAsync(token, v.Login!);
+            if (existing is not null)
+                await State.UpdateAsync(a => a with { Workspace = existing }, JS);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task DisconnectToken()
+    {
+        await State.UpdateAsync(a => a with { GithubLogin = null, GithubToken = null, Workspace = null }, JS);
+    }
+
+    private async Task CreateWorkspace()
+    {
+        var token = State.GithubToken;
+        if (string.IsNullOrEmpty(token) || State.Current is null) return;
+        _busy = true; _workspaceError = null;
+        try
+        {
+            var ws = await Workspace.CreateWorkspaceAsync(token, State.Current);
+            await State.UpdateAsync(a => a with { Workspace = ws }, JS);
+        }
+        catch (Octokit.AuthorizationException ex)
+        {
+            _workspaceError = $"GitHub rejected the request ({ex.StatusCode}). The token probably doesn't have the 'repo' scope.";
+        }
+        catch (Exception ex)
+        {
+            _workspaceError = ex.Message;
+        }
+        finally { _busy = false; }
+    }
+
+    private async Task DownloadAccount()
+        => await JS.InvokeVoidAsync("encyclopedia.downloadText", "encyclopedia-account.json", State.SerializeForDownload());
+
+    private async Task SignOut()
+    {
+        await State.ClearAsync(JS);
+        Nav.NavigateTo("/");
+    }
+}

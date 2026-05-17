@@ -1,5 +1,7 @@
 @namespace Encyclopedia.Components.Auth
 @inject IClientAccountService Accounts
+@inject AccountState State
+@inject NavigationManager Nav
 @inject IJSRuntime JS
 
 <div class="auth-form">
@@ -14,21 +16,26 @@
     </div>
 
     <BbButton OnClick="OnCreate" Disabled="@string.IsNullOrWhiteSpace(_displayName)">
-        Create account file
+        Create account
     </BbButton>
 
     @if (_created is not null)
     {
         <BbSeparator />
-        <BbAlert>
+        <BbAlert Variant="AlertVariant.Success">
             <BbAlertTitle>Account created</BbAlertTitle>
             <BbAlertDescription>
-                Your account ID is <code>@_created.Id</code>. Save this file somewhere safe — you'll need it on every device you contribute from.
+                Your account ID is <code>@_created.Id</code>. Save the file below — you'll need it on every other device you contribute from.
             </BbAlertDescription>
         </BbAlert>
-        <BbButton Variant="ButtonVariant.Outline" OnClick="Download">
-            Download @_filename
-        </BbButton>
+        <div class="auth-actions">
+            <BbButton Variant="ButtonVariant.Outline" OnClick="Download">
+                Download @_filename
+            </BbButton>
+            <BbButton OnClick="ContinueToProfile">
+                Continue to profile
+            </BbButton>
+        </div>
     }
 </div>
 
@@ -36,18 +43,20 @@
     private string _displayName = "";
     private string _email       = "";
     private Encyclopedia.Models.Account? _created;
-    private string _filename = "encyclopedia-account.json";
+    private const string _filename = "encyclopedia-account.json";
 
-    private void OnCreate()
+    private async Task OnCreate()
     {
         if (string.IsNullOrWhiteSpace(_displayName)) return;
         _created = Accounts.Create(_displayName, string.IsNullOrWhiteSpace(_email) ? null : _email);
+        await State.SetAsync(_created, JS);
     }
 
     private async Task Download()
     {
         if (_created is null) return;
-        var json = Accounts.Serialize(_created);
-        await JS.InvokeVoidAsync("encyclopedia.downloadText", _filename, json);
+        await JS.InvokeVoidAsync("encyclopedia.downloadText", _filename, Accounts.Serialize(_created));
     }
+
+    private void ContinueToProfile() => Nav.NavigateTo("/profile");
 }
