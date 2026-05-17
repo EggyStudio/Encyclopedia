@@ -1,5 +1,6 @@
 using BlazorBlueprint.Components;
 using BlueprintShell;
+using BlueprintShell.Shell;
 using Encyclopedia.Components;
 using Encyclopedia.Services.Articles;
 using Encyclopedia.Services.Assets;
@@ -26,7 +27,27 @@ builder.Services.AddHttpContextAccessor();
 builder.Services.AddBlueprintShell(o =>
 {
     o.AppTitle = "Encyclopedia";
+
+    // Reader paths render plain Blazor without the dock chrome; editor paths
+    // get the full dockable shell. Falls back to Full for anything we miss.
+    o.ChromeFor = ctx =>
+    {
+        var path = ctx.Request.Path.Value ?? "";
+        if (path.StartsWith("/edit", StringComparison.OrdinalIgnoreCase)) return ShellChromeMode.Full;
+        return ShellChromeMode.Hidden;
+    };
+
+    // Stack docks below 768px (helps the editor view on phones).
+    o.MobileBreakpointPx = 768;
+    o.MobileBehavior     = MobileBehavior.Stacked;
+
+    // Diagnostics endpoint at /_shell/diagnostics — Development only.
+    o.EnableDiagnostics  = builder.Environment.IsDevelopment();
 });
+
+// Auth bridge: lets the shell filter [EditorPanel/ReaderPage(RequiresRole=...)]
+// against our client-side account.
+builder.Services.AddScoped<IShellAuthContext, ShellAuthContextAdapter>();
 
 builder.Services.AddBlazorBlueprintComponents();
 
@@ -99,6 +120,22 @@ app.UseRouting();
 app.UseAntiforgery();
 
 app.MapBlueprintShell();
+
+app.MapBlueprintShellPwa(new BlueprintShellPwaOptions
+{
+    ShortName        = "Encyclopedia",
+    Name             = "Encyclopedia",
+    ThemeColor       = "#0a0a0a",
+    BackgroundColor  = "#ffffff",
+    DisplayMode      = "standalone",
+    StartUrl         = "/",
+    CacheStaticAssets = true,
+    Icons =
+    {
+        new PwaIcon("/icons/icon-192.png", "192x192", "image/png", "any maskable"),
+        new PwaIcon("/icons/icon-512.png", "512x512", "image/png", "any maskable"),
+    },
+});
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok", utc = DateTime.UtcNow }));
 
