@@ -4,7 +4,7 @@
 # Run:    docker run --rm -p 8080:8080 -e ConnectionStrings__Postgres=... encyclopedia
 
 # ---- Build stage --------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/sdk:10.0-preview AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Restore first so layer caches across source edits.
@@ -16,7 +16,7 @@ RUN dotnet publish Encyclopedia.csproj -c Release -o /app/publish \
     /p:UseAppHost=false /p:PublishTrimmed=false
 
 # ---- Runtime stage ------------------------------------------------------------
-FROM mcr.microsoft.com/dotnet/aspnet:10.0-preview AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 
 # Curl for healthchecks.
