@@ -1,46 +1,38 @@
-# fly.toml - Encyclopedia
+# fly.toml app configuration file generated for encyclopedia on 2026-05-18T00:36:48Z
 #
-# After editing:
-#   fly launch --no-deploy           # first time only
-#   fly secrets set GITHUB_TOKEN=... DATABASE_URL=...
-#   fly deploy                       # or rely on GH Actions
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
-# Postgres on Fly:
-#   fly postgres create --name encyclopedia-db
-#   fly postgres attach --app encyclopedia encyclopedia-db
-#   # this populates DATABASE_URL automatically; we map it to ConnectionStrings__Postgres below.
 
-app          = "encyclopedia"
-primary_region = "fra"
+app = 'encyclopedia'
+primary_region = 'cdg'
 
 [build]
-  # GH Actions builds & pushes; deploy pulls the image. Leave [build.image] empty
-  # locally to use `fly deploy --image ghcr.io/...:sha-XXXX` from the workflow.
+
+[deploy]
+  strategy = 'rolling'
 
 [env]
-  ASPNETCORE_URLS        = "http://+:8080"
-  ASPNETCORE_ENVIRONMENT = "Production"
+  ASPNETCORE_ENVIRONMENT = 'Production'
+  ASPNETCORE_URLS = 'http://+:8080'
 
 [http_service]
   internal_port = 8080
-  force_https   = true
-  auto_stop_machines   = "stop"
-  auto_start_machines  = true
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
   min_machines_running = 1
-  processes            = ["app"]
+  processes = ['app']
 
   [[http_service.checks]]
-    grace_period  = "10s"
-    interval      = "30s"
-    method        = "get"
-    path          = "/health"
-    protocol      = "http"
-    timeout       = "5s"
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '10s'
+    method = 'get'
+    path = '/health'
+    protocol = 'http'
 
 [[vm]]
-  cpu_kind = "shared"
-  cpus     = 1
-  memory   = "512mb"
-
-[deploy]
-  strategy = "rolling"
+  memory = '512mb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024
