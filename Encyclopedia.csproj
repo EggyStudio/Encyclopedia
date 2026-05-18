@@ -24,7 +24,7 @@
 
   <ItemGroup>
     <!-- Shell + UI -->
-    <PackageReference Include="BlueprintShell" Version="0.1.6" />
+    <PackageReference Include="BlueprintShell" Version="0.1.7" />
 
     <!-- Markdown + YAML -->
     <PackageReference Include="Markdig" Version="0.37.0" />
