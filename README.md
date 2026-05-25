@@ -66,19 +66,48 @@ diagrams and dataflow detail.
 
 ## Deploy
 
-`main` triggers `.github/workflows/build-and-deploy.yml`, which builds a
-multi-stage Docker image, pushes `sha-<commit>` + `latest` to
-`ghcr.io/<owner>/<repo>`, then `flyctl deploy --image ...` with a rolling
-strategy for zero-downtime.
+Every push to `main` triggers `.github/workflows/build-and-deploy.yml`,
+which verifies the Dockerfile compiles and then runs
+`flyctl deploy --remote-only` against the fly app named in `fly.toml`.
+The image builds on fly.io's remote builder; the runner only orchestrates.
 
-Required GitHub Actions secrets:
+### First-time setup (per fly.io app)
 
-- `FLY_API_TOKEN` - `fly tokens create deploy` output.
+If you've never deployed this app before - or you're a contributor forking
+it to your own fly account - do this once. It's a single script:
 
-Required Fly.io secrets:
+```bash
+# 1. Install flyctl + log in (skip if already done)
+curl -L https://fly.io/install.sh | sh
+export PATH="$HOME/.fly/bin:$PATH"
+flyctl auth login
 
-- `ConnectionStrings__Postgres` - set automatically by `fly postgres attach`.
-- `GITHUB_TOKEN` - optional, increases Octokit rate limits for discovery.
+# 2. Create the app on fly.io (if it doesn't exist yet)
+flyctl launch --no-deploy   # accept defaults; this writes fly.toml if missing
+
+# 3. Provision Postgres, attach it, install the required extensions
+./scripts/fly-bootstrap.sh
+```
+
+`scripts/fly-bootstrap.sh` is idempotent - safe to re-run if a step
+half-finished. Override `APP`, `DB`, `REGION`, `VM_SIZE`, or `VOLUME_SIZE`
+as env vars when running it for a different app or region.
+
+### Secrets
+
+GitHub Actions secret needed for CI auto-deploy:
+
+- `FLY_API_TOKEN` - generate with `flyctl tokens create deploy -a <app>`,
+  then add it under repo Settings → Secrets and variables → Actions.
+
+Fly.io app secrets needed for the running app (the bootstrap script sets
+the first one; the second is optional):
+
+- `DATABASE_URL` - set automatically by `flyctl postgres attach`. The app
+  reads either this URL form or `ConnectionStrings__Postgres` in Npgsql
+  key=value form, whichever is present.
+- `GITHUB_TOKEN` - optional; increases Octokit rate limits when the
+  discovery service walks public wiki repos.
 
 ## Project layout
 
