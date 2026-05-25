@@ -26,7 +26,10 @@ services:
       ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=encyclopedia;Username=encyclopedia;Password=encyclopedia"
       GITHUB_TOKEN: "${GITHUB_TOKEN:-}"
     ports:
-      - "8080:8080"
+      # Container always listens on 8080; published on the host at
+      # ${ENCYCLOPEDIA_HOST_PORT}, defaulting to 8190 (uncommon enough to
+      # dodge nextcloud's host:8080 and other typical dev services).
+      - "${ENCYCLOPEDIA_HOST_PORT:-8190}:8080"
 
 volumes:
   pgdata:

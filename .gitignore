@@ -438,8 +438,10 @@ FodyWeavers.xsd
 *.ipr
 # Rider sometimes generates per-solution module files
 *.sln.iml
-# Optional: JetBrains run configurations outside .idea
-.run/
+# Optional: JetBrains run configurations outside .idea - ignore transient
+# files but track the shared run configs we ship with the repo.
+.run/*
+!.run/*.run.xml
 
 # JetBrains Fleet (if used)
 .fleet/

@@ -1,0 +1,24 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Encyclopedia" type="DotNetProject" factoryName=".NET Project" show_console_on_std_err="false" show_console_on_std_out="false">
+    <option name="EXE_PATH" value="" />
+    <option name="PROGRAM_PARAMETERS" value="" />
+    <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+    <option name="PASS_PARENT_ENVS" value="1" />
+    <option name="USE_EXTERNAL_CONSOLE" value="0" />
+    <option name="USE_MONO" value="0" />
+    <option name="RUNTIME_ARGUMENTS" value="" />
+    <option name="GENERATE_APPLICATIONHOST_CONFIG" value="1" />
+    <option name="PROJECT_PATH" value="$PROJECT_DIR$/Encyclopedia.csproj" />
+    <option name="PROJECT_EXE_PATH_TRACKING" value="0" />
+    <option name="PROJECT_ARGUMENTS_TRACKING" value="0" />
+    <option name="PROJECT_WORKING_DIRECTORY_TRACKING" value="0" />
+    <option name="PROJECT_KIND" value="DotNetCore" />
+    <option name="PROJECT_TFM" value="net10.0" />
+    <option name="LAUNCH_PROFILE_NAME" value="Encyclopedia" />
+    <option name="LAUNCH_PROFILE_TFM" value="net10.0" />
+    <method v="2">
+      <option name="Build" />
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Start Postgres" run_configuration_type="ShellScript" />
+    </method>
+  </configuration>
+</component>

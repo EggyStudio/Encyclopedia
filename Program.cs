@@ -163,6 +163,12 @@ app.MapRazorComponents<Encyclopedia.Components.App>()
             await db.Database.ExecuteSqlRawAsync(sql);
             app.Logger.LogInformation("Database schema ensured ({Path})", migrationPath);
         }
+        catch (Npgsql.NpgsqlException ex) when (ex.InnerException is System.Net.Sockets.SocketException)
+        {
+            app.Logger.LogWarning(
+                "Postgres unreachable at startup ({Message}). The app will run but DB-backed pages will show a friendly error until you run: docker compose up -d --wait postgres",
+                ex.Message);
+        }
         catch (Exception ex)
         {
             app.Logger.LogError(ex, "Could not apply schema from {Path}", migrationPath);
