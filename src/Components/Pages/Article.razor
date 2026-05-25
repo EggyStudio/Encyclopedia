@@ -94,7 +94,17 @@ else
         _loading = true;
         _frontmatter = null;
 
-        var row = await Db.Articles.AsNoTracking().FirstOrDefaultAsync(a => a.Identifier == Identifier);
+        Encyclopedia.Services.Database.Entities.ArticleEntity? row;
+        try
+        {
+            row = await Db.Articles.AsNoTracking().FirstOrDefaultAsync(a => a.Identifier == Identifier);
+        }
+        catch
+        {
+            // DB unreachable - same "not found" UX rather than crashing.
+            _loading = false;
+            return;
+        }
         if (row is null)
         {
             _loading = false;
@@ -125,8 +135,12 @@ else
         _relativePath = row.RelativePath;
         _fetchedAt    = row.FetchedAt;
 
-        var source = await Db.WikiSources.AsNoTracking().FirstOrDefaultAsync(s => s.Id == row.SourceId);
-        if (source is not null) _branch = source.DefaultBranch;
+        try
+        {
+            var source = await Db.WikiSources.AsNoTracking().FirstOrDefaultAsync(s => s.Id == row.SourceId);
+            if (source is not null) _branch = source.DefaultBranch;
+        }
+        catch { /* branch is best-effort for the footer link */ }
 
         _loading = false;
     }

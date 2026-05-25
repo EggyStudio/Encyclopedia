@@ -17,6 +17,17 @@
 {
     <p class="muted">Loading…</p>
 }
+else if (_dbError is not null)
+{
+    <BbAlert Variant="AlertVariant.Danger">
+        <BbAlertTitle>Can't reach the registry</BbAlertTitle>
+        <BbAlertDescription>
+            Postgres looks unreachable - start it with
+            <code>docker compose up -d postgres</code> from the project root,
+            then refresh. (@_dbError)
+        </BbAlertDescription>
+    </BbAlert>
+}
 else if (_sources.Count == 0)
 {
     <p class="muted">
@@ -53,18 +64,26 @@ else
 
 @code {
     private bool _loading = true;
+    private string? _dbError;
     private IReadOnlyList<WikiSource> _sources = [];
     private Dictionary<string, int> _articleCounts = new();
 
     protected override async Task OnInitializedAsync()
     {
-        _sources = await Registry.GetAllAsync();
-        var groups = await Db.Articles
-            .AsNoTracking()
-            .GroupBy(a => a.SourceId)
-            .Select(g => new { SourceId = g.Key, Count = g.Count() })
-            .ToListAsync();
-        _articleCounts = groups.ToDictionary(g => g.SourceId, g => g.Count);
-        _loading = false;
+        try
+        {
+            _sources = await Registry.GetAllAsync();
+            var groups = await Db.Articles
+                .AsNoTracking()
+                .GroupBy(a => a.SourceId)
+                .Select(g => new { SourceId = g.Key, Count = g.Count() })
+                .ToListAsync();
+            _articleCounts = groups.ToDictionary(g => g.SourceId, g => g.Count);
+        }
+        catch (Exception ex)
+        {
+            _dbError = ex.Message;
+        }
+        finally { _loading = false; }
     }
 }

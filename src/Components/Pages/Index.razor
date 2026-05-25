@@ -20,6 +20,17 @@
     {
         <p class="muted">Loading…</p>
     }
+    else if (_dbError is not null)
+    {
+        <BbAlert Variant="AlertVariant.Danger">
+            <BbAlertTitle>Can't reach the article index</BbAlertTitle>
+            <BbAlertDescription>
+                Postgres looks unreachable - start it with
+                <code>docker compose up -d postgres</code> from the project
+                root, then refresh. (@_dbError)
+            </BbAlertDescription>
+        </BbAlert>
+    }
     else if (_latest.Count == 0)
     {
         <p class="muted">
@@ -50,25 +61,32 @@
 
 @code {
     private bool _loading = true;
+    private string? _dbError;
     private List<ArticleCard> _latest = [];
 
     protected override async Task OnInitializedAsync()
     {
-        var rows = await Db.Articles
-            .AsNoTracking()
-            .OrderByDescending(a => a.FetchedAt)
-            .Take(20)
-            .Select(a => new { a.Identifier, a.Title, a.FrontmatterJson, a.SourceId, a.FetchedAt })
-            .ToListAsync();
+        try
+        {
+            var rows = await Db.Articles
+                .AsNoTracking()
+                .OrderByDescending(a => a.FetchedAt)
+                .Take(20)
+                .Select(a => new { a.Identifier, a.Title, a.FrontmatterJson, a.SourceId, a.FetchedAt })
+                .ToListAsync();
 
-        _latest = rows.Select(r => new ArticleCard(
-            r.Identifier,
-            r.Title,
-            ExtractSummary(r.FrontmatterJson),
-            r.SourceId,
-            r.FetchedAt)).ToList();
-
-        _loading = false;
+            _latest = rows.Select(r => new ArticleCard(
+                r.Identifier,
+                r.Title,
+                ExtractSummary(r.FrontmatterJson),
+                r.SourceId,
+                r.FetchedAt)).ToList();
+        }
+        catch (Exception ex)
+        {
+            _dbError = ex.Message;
+        }
+        finally { _loading = false; }
     }
 
     // Pull just the summary out of the JSON to avoid deserializing the full
