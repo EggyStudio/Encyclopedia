@@ -57,9 +57,42 @@ builder.Services.AddBlazorBlueprintComponents();
 // -----------------------------------------------------------------------------
 // Database
 // -----------------------------------------------------------------------------
+// Resolution order:
+//   1. ConnectionStrings:Postgres           - appsettings.json / env override
+//   2. DATABASE_URL                         - fly.io's `flyctl postgres attach`
+//                                              sets this as a postgres:// URL
+//   3. Local docker-compose default         - last-resort fallback
 var connString = builder.Configuration.GetConnectionString("Postgres")
+                 ?? ParseDatabaseUrl(builder.Configuration["DATABASE_URL"])
                  ?? "Host=localhost;Port=5432;Database=encyclopedia;Username=encyclopedia;Password=encyclopedia";
 builder.Services.AddDbContextPool<EncyclopediaDbContext>(o => o.UseNpgsql(connString));
+
+static string? ParseDatabaseUrl(string? url)
+{
+    if (string.IsNullOrWhiteSpace(url)) return null;
+    if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return null;
+    if (uri.Scheme is not ("postgres" or "postgresql")) return null;
+
+    var userInfo = (uri.UserInfo ?? "").Split(':', 2);
+    var b = new Npgsql.NpgsqlConnectionStringBuilder
+    {
+        Host     = uri.Host,
+        Port     = uri.Port > 0 ? uri.Port : 5432,
+        Database = uri.AbsolutePath.TrimStart('/'),
+        Username = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : "",
+        Password = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "",
+    };
+    // Pass through ?sslmode=... when fly.io / Supabase / Neon include one.
+    foreach (var pair in (uri.Query ?? "").TrimStart('?')
+        .Split('&', StringSplitOptions.RemoveEmptyEntries))
+    {
+        var kv = pair.Split('=', 2);
+        if (kv.Length == 2 && kv[0].Equals("sslmode", StringComparison.OrdinalIgnoreCase)
+            && Enum.TryParse<Npgsql.SslMode>(kv[1], ignoreCase: true, out var mode))
+            b.SslMode = mode;
+    }
+    return b.ConnectionString;
+}
 
 // -----------------------------------------------------------------------------
 // External clients
