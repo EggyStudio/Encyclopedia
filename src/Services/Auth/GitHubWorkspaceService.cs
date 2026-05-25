@@ -7,8 +7,11 @@ namespace Encyclopedia.Services.Auth;
 
 public sealed class GitHubWorkspaceService : IGitHubWorkspaceService
 {
+    // Topics on GitHub are restricted to lowercase + hyphen, so the discovery
+    // topic stays kebab-case. The repo name itself is unconstrained, so we
+    // use PascalCase to fit alongside other project repos on the same owner.
     public const string DiscoveryTopic = "encyclopedia-wiki";
-    public const string DefaultRepoName = "encyclopedia-wiki";
+    public const string DefaultRepoName = "EncyclopediaWiki";
     public const string MetaFileName    = ".wiki-meta.yml";
 
     private static readonly string[] RequiredScopes = ["repo"]; // public_repo would be enough for public repos
@@ -84,7 +87,7 @@ public sealed class GitHubWorkspaceService : IGitHubWorkspaceService
         var existing = await FindExistingWorkspaceAsync(token, login, ct);
         if (existing is not null) return existing;
 
-        // Pick a name. If `encyclopedia-wiki` is taken, suffix with -1, -2, ...
+        // Pick a name. If `EncyclopediaWiki` is taken, suffix with -1, -2, ...
         progress?.Report("Picking a repository name…");
         var repoName = await PickAvailableNameAsync(gh, login, DefaultRepoName);
 
