@@ -7,12 +7,12 @@
 <div class="auth-form">
     <div class="auth-field">
         <BbLabel For="ca-name">Display name</BbLabel>
-        <BbInput Id="ca-name" @bind-Value="_displayName" Placeholder="Ada Lovelace" />
+        <BbInput Id="ca-name" @bind-Value="_displayName" UpdateTiming="UpdateTiming.Immediate" Placeholder="Ada Lovelace" />
     </div>
 
     <div class="auth-field">
         <BbLabel For="ca-email">Email <span class="muted">(optional, used as git commit author)</span></BbLabel>
-        <BbInput Id="ca-email" Type="InputType.Email" @bind-Value="_email" Placeholder="ada@example.com" />
+        <BbInput Id="ca-email" Type="InputType.Email" @bind-Value="_email" UpdateTiming="UpdateTiming.Immediate" Placeholder="ada@example.com" />
     </div>
 
     <BbButton OnClick="OnCreate" Disabled="@string.IsNullOrWhiteSpace(_displayName)">

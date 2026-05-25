@@ -42,27 +42,27 @@ else
             <div class="new-article-form">
                 <div class="auth-field">
                     <BbLabel For="na-title">Title</BbLabel>
-                    <BbInput Id="na-title" @bind-Value="_title" @bind-Value:event="oninput" Placeholder="Cathode ray tube" />
+                    <BbInput Id="na-title" @bind-Value="_title" UpdateTiming="UpdateTiming.Immediate" Placeholder="Cathode ray tube" />
                 </div>
 
                 <div class="auth-field">
                     <BbLabel For="na-id">Identifier <span class="muted">(URL slug - auto from title; edit to override)</span></BbLabel>
-                    <BbInput Id="na-id" @bind-Value="_identifier" Placeholder="cathode-ray-tube" />
+                    <BbInput Id="na-id" @bind-Value="_identifier" UpdateTiming="UpdateTiming.Immediate" Placeholder="cathode-ray-tube" />
                 </div>
 
                 <div class="auth-field">
                     <BbLabel For="na-summary">Summary <span class="muted">(one sentence; shown in search results)</span></BbLabel>
-                    <BbInput Id="na-summary" @bind-Value="_summary" Placeholder="A short description of the article." />
+                    <BbInput Id="na-summary" @bind-Value="_summary" UpdateTiming="UpdateTiming.Immediate" Placeholder="A short description of the article." />
                 </div>
 
                 <div class="auth-field">
                     <BbLabel For="na-tags">Tags <span class="muted">(comma-separated)</span></BbLabel>
-                    <BbInput Id="na-tags" @bind-Value="_tags" Placeholder="electronics, history" />
+                    <BbInput Id="na-tags" @bind-Value="_tags" UpdateTiming="UpdateTiming.Immediate" Placeholder="electronics, history" />
                 </div>
 
                 <div class="auth-field">
                     <BbLabel For="na-cats">Categories <span class="muted">(comma-separated)</span></BbLabel>
-                    <BbInput Id="na-cats" @bind-Value="_categories" Placeholder="Technology" />
+                    <BbInput Id="na-cats" @bind-Value="_categories" UpdateTiming="UpdateTiming.Immediate" Placeholder="Technology" />
                 </div>
 
                 <div class="auth-field">
@@ -71,7 +71,7 @@ else
                               class="bb-textarea new-article-body"
                               rows="18"
                               spellcheck="true"
-                              @bind="_body"
+                              @bind="_body" @bind:event="oninput"
                               placeholder="# Heading&#10;&#10;Write your article in Markdown here.&#10;Links to other articles will be created automatically."></textarea>
                 </div>
 

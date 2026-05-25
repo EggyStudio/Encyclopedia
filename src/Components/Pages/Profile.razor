@@ -64,7 +64,7 @@ else
                 {
                     <div class="auth-field">
                         <BbLabel For="gh-token">Personal access token</BbLabel>
-                        <BbInput Id="gh-token" Type="InputType.Password" @bind-Value="_tokenInput" Placeholder="ghp_…" />
+                        <BbInput Id="gh-token" Type="InputType.Password" @bind-Value="_tokenInput" UpdateTiming="UpdateTiming.Immediate" Placeholder="ghp_…" />
                         <small class="muted">
                             <a href="https://github.com/settings/tokens/new?scopes=repo&description=Encyclopedia%20workspace" target="_blank" rel="noopener">
                                 Create a token on GitHub →
