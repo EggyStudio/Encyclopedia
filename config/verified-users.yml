@@ -8,7 +8,7 @@
 # they need a manual opt-in from the Discover page before appearing in the wiki.
 
 owners:
-  # - EggyStudio
+  - EggyStudio
 
 repos:
   # - some-org/some-wiki
