@@ -1,4 +1,4 @@
-name: build
+name: build-and-deploy
 
 on:
   push:
@@ -22,3 +22,25 @@ jobs:
           push: false
           cache-from: type=gha
           cache-to:   type=gha,mode=max
+
+  deploy:
+    # Only deploy on push to main - PRs and manual workflow_dispatch runs
+    # still go through the build job above but stop short of shipping.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    # Serialise deploys so a fast follow-up push doesn't race the one in
+    # flight; cancel-in-progress=false keeps the earlier deploy alive.
+    concurrency:
+      group: fly-deploy
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Deploy to fly.io
+        run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
