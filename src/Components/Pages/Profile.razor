@@ -6,8 +6,11 @@
 
 @inject AccountState State
 @inject IGitHubWorkspaceService Workspace
+@inject IWorkspaceSyncService Sync
 @inject NavigationManager Nav
 @inject IJSRuntime JS
+
+@using Encyclopedia.Services.Articles
 
 <PageTitle>Profile · Encyclopedia</PageTitle>
 
@@ -62,19 +65,41 @@ else
             <BbCardContent>
                 @if (string.IsNullOrEmpty(account.GithubToken))
                 {
-                    <div class="auth-field">
-                        <BbLabel For="gh-token">Personal access token</BbLabel>
-                        <BbInput Id="gh-token" Type="InputType.Password" @bind-Value="_tokenInput" UpdateTiming="UpdateTiming.Immediate" Placeholder="ghp_…" />
-                        <small class="muted">
-                            <a href="https://github.com/settings/tokens/new?scopes=repo&description=Encyclopedia%20workspace" target="_blank" rel="noopener">
-                                Create a token on GitHub →
-                            </a>
-                        </small>
-                    </div>
-                    <BbButton OnClick="ConnectToken"
-                              Disabled="@(_busy || string.IsNullOrWhiteSpace(_tokenInput))">
-                        @(_busy ? "Validating…" : "Connect GitHub")
-                    </BbButton>
+                    <ol class="auth-steps">
+                        <li>
+                            <p>
+                                Generate a token on GitHub. The button below opens GitHub's
+                                token page with the <code>repo</code> scope already selected -
+                                pick an expiration and click <strong>Generate token</strong>.
+                            </p>
+                            <BbButton Variant="ButtonVariant.Outline" OnClick="OpenTokenPage">
+                                Create token on GitHub →
+                            </BbButton>
+                        </li>
+                        <li>
+                            <div class="auth-field">
+                                <BbLabel For="gh-token">Paste it here</BbLabel>
+                                <BbInput Id="gh-token" Type="InputType.Password" @bind-Value="_tokenInput" UpdateTiming="UpdateTiming.Immediate" Placeholder="ghp_…" />
+                            </div>
+                            <BbButton OnClick="ConnectToken"
+                                      Disabled="@(_busy || string.IsNullOrWhiteSpace(_tokenInput))">
+                                @(_busy ? "Validating…" : "Connect GitHub")
+                            </BbButton>
+                        </li>
+                    </ol>
+                    <details class="auth-disclosure">
+                        <summary>Prefer a fine-grained token?</summary>
+                        <p>
+                            Fine-grained tokens are accepted, but GitHub doesn't let us pre-fill
+                            their permissions via URL. Create one at
+                            <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">github.com/settings/personal-access-tokens/new</a>
+                            with Repository access set to <strong>All repositories</strong>
+                            (needed so we can create the workspace repo), and these permissions:
+                            Administration <strong>Read &amp; write</strong>,
+                            Contents <strong>Read &amp; write</strong>,
+                            Metadata <strong>Read-only</strong> (added automatically).
+                        </p>
+                    </details>
                 }
                 else
                 {
@@ -114,7 +139,32 @@ else
                     </dl>
                     <div class="profile-actions">
                         <BbButton OnClick="@(() => Nav.NavigateTo("/new"))">Write a new article</BbButton>
+                        <BbButton Variant="ButtonVariant.Outline" OnClick="SyncNow" Disabled="@_syncBusy">
+                            @(_syncBusy ? "Syncing…" : "Sync now")
+                        </BbButton>
                     </div>
+                    @if (_syncBusy && _syncStatus is not null)
+                    {
+                        <p class="muted workspace-progress">@_syncStatus</p>
+                    }
+                    @if (_syncResult is not null)
+                    {
+                        <BbAlert Variant="AlertVariant.Success">
+                            <BbAlertTitle>Synced</BbAlertTitle>
+                            <BbAlertDescription>
+                                @_syncResult.Total article(s) indexed
+                                (@_syncResult.Upserted added or updated,
+                                @_syncResult.Removed removed).
+                            </BbAlertDescription>
+                        </BbAlert>
+                    }
+                    @if (_syncError is not null)
+                    {
+                        <BbAlert Variant="AlertVariant.Danger">
+                            <BbAlertTitle>Sync failed</BbAlertTitle>
+                            <BbAlertDescription>@_syncError</BbAlertDescription>
+                        </BbAlert>
+                    }
                 }
                 else if (!string.IsNullOrEmpty(account.GithubToken))
                 {
@@ -122,6 +172,10 @@ else
                     <BbButton OnClick="CreateWorkspace" Disabled="@_busy">
                         @(_busy ? "Creating…" : "Create my workspace")
                     </BbButton>
+                    @if (_busy && _workspaceStatus is not null)
+                    {
+                        <p class="muted workspace-progress">@_workspaceStatus</p>
+                    }
                 }
                 else
                 {
@@ -141,11 +195,22 @@ else
 }
 
 @code {
+    private const string TokenCreateUrl =
+        "https://github.com/settings/tokens/new?scopes=repo&description=Encyclopedia%20workspace";
+
     private bool   _hydrationAttempted;
     private bool   _busy;
     private string _tokenInput     = "";
     private string? _error;
     private string? _workspaceError;
+    private string? _workspaceStatus;
+    private bool    _syncBusy;
+    private string? _syncStatus;
+    private string? _syncError;
+    private SyncResult? _syncResult;
+
+    private Task OpenTokenPage()
+        => JS.InvokeVoidAsync("open", TokenCreateUrl, "_blank", "noopener").AsTask();
 
     protected override void OnInitialized() => State.Changed += StateHasChanged;
     public void Dispose() => State.Changed -= StateHasChanged;
@@ -203,10 +268,11 @@ else
     {
         var token = State.GithubToken;
         if (string.IsNullOrEmpty(token) || State.Current is null) return;
-        _busy = true; _workspaceError = null;
+        _busy = true; _workspaceError = null; _workspaceStatus = null;
+        var progress = new Progress<string>(s => { _workspaceStatus = s; StateHasChanged(); });
         try
         {
-            var ws = await Workspace.CreateWorkspaceAsync(token, State.Current);
+            var ws = await Workspace.CreateWorkspaceAsync(token, State.Current, progress);
             await State.UpdateAsync(a => a with { Workspace = ws }, JS);
         }
         catch (Octokit.AuthorizationException ex)
@@ -217,7 +283,26 @@ else
         {
             _workspaceError = ex.Message;
         }
-        finally { _busy = false; }
+        finally { _busy = false; _workspaceStatus = null; }
+    }
+
+    private async Task SyncNow()
+    {
+        var account = State.Current;
+        var ws      = account?.Workspace;
+        if (account is null || ws is null) return;
+
+        _syncBusy = true; _syncError = null; _syncResult = null; _syncStatus = null;
+        var progress = new Progress<string>(s => { _syncStatus = s; StateHasChanged(); });
+        try
+        {
+            _syncResult = await Sync.SyncWorkspaceAsync(account, ws, progress);
+        }
+        catch (Exception ex)
+        {
+            _syncError = ex.Message;
+        }
+        finally { _syncBusy = false; _syncStatus = null; }
     }
 
     private async Task DownloadAccount()

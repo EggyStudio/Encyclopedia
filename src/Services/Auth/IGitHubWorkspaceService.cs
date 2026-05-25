@@ -18,11 +18,12 @@ public interface IGitHubWorkspaceService
 
     /// <summary>
     /// Create a workspace repo for this user if one doesn't exist, initialize
-    /// it with a <c>.wiki-meta.yml</c>, an empty articles/ tree, README, and
-    /// apply the <c>encyclopedia-wiki</c> topic so the discovery service picks
-    /// it up automatically.
+    /// it with a <c>.wiki-meta.yml</c>, replace the README, and apply the
+    /// <c>encyclopedia-wiki</c> topic so the discovery service picks it up
+    /// automatically. Pass <paramref name="progress"/> to receive a short
+    /// status string before each GitHub API call.
     /// </summary>
-    Task<WorkspaceRepo> CreateWorkspaceAsync(string token, Account account, CancellationToken ct = default);
+    Task<WorkspaceRepo> CreateWorkspaceAsync(string token, Account account, IProgress<string>? progress = null, CancellationToken ct = default);
 
     /// <summary>Returns true if the user already has a workspace repo we'd recognize.</summary>
     Task<WorkspaceRepo?> FindExistingWorkspaceAsync(string token, string login, CancellationToken ct = default);

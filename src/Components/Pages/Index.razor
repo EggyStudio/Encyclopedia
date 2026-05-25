@@ -1,6 +1,10 @@
 @page "/"
 @attribute [ReaderPage("home", "/", UseBlazorRouter = true, Title = "Home")]
 @namespace Encyclopedia.Components.Pages
+@inject EncyclopediaDbContext Db
+
+@using Microsoft.EntityFrameworkCore
+@using Encyclopedia.Services.Database
 
 <PageTitle>Encyclopedia</PageTitle>
 
@@ -11,7 +15,80 @@
 </section>
 
 <section class="home-featured">
-    <h2>Featured articles</h2>
-    @* TODO: list latest/featured articles via IWikiSourceRegistry + IFullTextSearchService rank. *@
-    <p class="todo">No articles indexed yet.</p>
+    <h2>Latest articles</h2>
+    @if (_loading)
+    {
+        <p class="muted">Loading…</p>
+    }
+    else if (_latest.Count == 0)
+    {
+        <p class="muted">
+            No articles indexed yet. <a href="/login">Sign in</a> and publish
+            one - it'll show up here automatically.
+        </p>
+    }
+    else
+    {
+        <ul class="article-list">
+            @foreach (var a in _latest)
+            {
+                <li>
+                    <a class="article-list-title" href="/wiki/@a.Identifier">@a.Title</a>
+                    @if (!string.IsNullOrEmpty(a.Summary))
+                    {
+                        <p class="article-list-summary">@a.Summary</p>
+                    }
+                    <p class="article-list-meta muted">
+                        from <a href="https://github.com/@a.SourceId" target="_blank" rel="noopener">@a.SourceId</a>
+                        · synced @a.FetchedAt.ToString("yyyy-MM-dd")
+                    </p>
+                </li>
+            }
+        </ul>
+    }
 </section>
+
+@code {
+    private bool _loading = true;
+    private List<ArticleCard> _latest = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        var rows = await Db.Articles
+            .AsNoTracking()
+            .OrderByDescending(a => a.FetchedAt)
+            .Take(20)
+            .Select(a => new { a.Identifier, a.Title, a.FrontmatterJson, a.SourceId, a.FetchedAt })
+            .ToListAsync();
+
+        _latest = rows.Select(r => new ArticleCard(
+            r.Identifier,
+            r.Title,
+            ExtractSummary(r.FrontmatterJson),
+            r.SourceId,
+            r.FetchedAt)).ToList();
+
+        _loading = false;
+    }
+
+    // Pull just the summary out of the JSON to avoid deserializing the full
+    // Frontmatter record (and its required-property constructor) for a list view.
+    private static string? ExtractSummary(string frontmatterJson)
+    {
+        try
+        {
+            using var doc = System.Text.Json.JsonDocument.Parse(frontmatterJson);
+            if (doc.RootElement.TryGetProperty("summary", out var s) && s.ValueKind == System.Text.Json.JsonValueKind.String)
+                return s.GetString();
+        }
+        catch { }
+        return null;
+    }
+
+    private sealed record ArticleCard(
+        string Identifier,
+        string Title,
+        string? Summary,
+        string SourceId,
+        DateTime FetchedAt);
+}

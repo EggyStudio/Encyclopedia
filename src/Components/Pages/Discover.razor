@@ -2,20 +2,69 @@
 @attribute [ReaderPage("discover", "/discover", UseBlazorRouter = true, Title = "Discover")]
 @namespace Encyclopedia.Components.Pages
 @inject IWikiSourceRegistry Registry
+@inject EncyclopediaDbContext Db
+
+@using Microsoft.EntityFrameworkCore
+@using Encyclopedia.Models
+@using Encyclopedia.Services.Database
 
 <PageTitle>Discover wikis · Encyclopedia</PageTitle>
 
 <h1>Discover wikis</h1>
-<p>Verified wikis are included automatically. Discovered repos can be opted in.</p>
+<p>Each wiki is a GitHub repo. Verified wikis are auto-included; opt-in wikis are user workspaces published through this app.</p>
 
-<section>
-    <h2>Verified</h2>
-    @* TODO: list verified sources *@
-    <p class="todo">None loaded yet.</p>
-</section>
+@if (_loading)
+{
+    <p class="muted">Loading…</p>
+}
+else if (_sources.Count == 0)
+{
+    <p class="muted">
+        No wikis registered yet. Once a user publishes their first article,
+        their workspace shows up here automatically.
+    </p>
+}
+else
+{
+    <ul class="wiki-source-list">
+        @foreach (var s in _sources)
+        {
+            var count = _articleCounts.GetValueOrDefault(s.Id, 0);
+            <li>
+                <h3>
+                    <a href="https://github.com/@s.Id" target="_blank" rel="noopener">@s.Owner/@s.Repo</a>
+                    <span class="wiki-source-trust trust-@s.Trust.ToString().ToLowerInvariant()">@s.Trust</span>
+                </h3>
+                @if (!string.IsNullOrEmpty(s.Meta.Title))
+                {
+                    <p class="wiki-source-title">@s.Meta.Title</p>
+                }
+                @if (!string.IsNullOrEmpty(s.Meta.Description))
+                {
+                    <p class="wiki-source-desc muted">@s.Meta.Description</p>
+                }
+                <p class="muted">
+                    @count article(s) indexed · last synced @s.LastSyncedAt.ToString("yyyy-MM-dd HH:mm 'UTC'")
+                </p>
+            </li>
+        }
+    </ul>
+}
 
-<section>
-    <h2>Discovered</h2>
-    @* TODO: list discovered repos with a "Include" button (admin-gated). *@
-    <p class="todo">Run discovery to populate.</p>
-</section>
+@code {
+    private bool _loading = true;
+    private IReadOnlyList<WikiSource> _sources = [];
+    private Dictionary<string, int> _articleCounts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _sources = await Registry.GetAllAsync();
+        var groups = await Db.Articles
+            .AsNoTracking()
+            .GroupBy(a => a.SourceId)
+            .Select(g => new { SourceId = g.Key, Count = g.Count() })
+            .ToListAsync();
+        _articleCounts = groups.ToDictionary(g => g.SourceId, g => g.Count);
+        _loading = false;
+    }
+}

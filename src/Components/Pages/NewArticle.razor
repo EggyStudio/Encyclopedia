@@ -6,6 +6,7 @@
 
 @inject AccountState State
 @inject IGitHubPushService Push
+@inject IWorkspaceSyncService Sync
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 
@@ -181,6 +182,19 @@ else
                 authorName:    account.DisplayName,
                 authorEmail:   account.Email ?? $"{account.GithubLogin}@users.noreply.github.com",
                 githubToken:   token);
+
+            // Pull the new article into the local index so it shows up on
+            // Home / Discover / the article page without waiting for a
+            // background sync.
+            try
+            {
+                await Sync.SyncWorkspaceAsync(account, ws);
+            }
+            catch (Exception syncEx)
+            {
+                // Commit already succeeded; surface sync failure separately.
+                _error = $"Article was committed to GitHub but the local index update failed: {syncEx.Message}";
+            }
         }
         catch (Exception ex)
         {

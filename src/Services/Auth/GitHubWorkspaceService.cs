@@ -72,16 +72,20 @@ public sealed class GitHubWorkspaceService : IGitHubWorkspaceService
         return null;
     }
 
-    public async Task<WorkspaceRepo> CreateWorkspaceAsync(string token, Account account, CancellationToken ct = default)
+    public async Task<WorkspaceRepo> CreateWorkspaceAsync(string token, Account account, IProgress<string>? progress = null, CancellationToken ct = default)
     {
         var gh = ClientFor(token);
+
+        progress?.Report("Checking your GitHub account…");
         var user = await gh.User.Current();
         var login = user.Login;
 
+        progress?.Report("Looking for an existing workspace…");
         var existing = await FindExistingWorkspaceAsync(token, login, ct);
         if (existing is not null) return existing;
 
         // Pick a name. If `encyclopedia-wiki` is taken, suffix with -1, -2, ...
+        progress?.Report("Picking a repository name…");
         var repoName = await PickAvailableNameAsync(gh, login, DefaultRepoName);
 
         var newRepo = new NewRepository(repoName)
@@ -94,11 +98,16 @@ public sealed class GitHubWorkspaceService : IGitHubWorkspaceService
             HasDownloads   = false,
             LicenseTemplate = "cc-by-4.0",
         };
+        progress?.Report($"Creating {login}/{repoName} on GitHub…");
         var created = await gh.Repository.Create(newRepo);
         var branch  = string.IsNullOrEmpty(created.DefaultBranch) ? "main" : created.DefaultBranch;
         var identifier = SlugifyIdentifier(login);
 
         // .wiki-meta.yml ---------------------------------------------------------
+        // Empty articles/ and assets/ trees aren't scaffolded - GitHub's contents
+        // API (and Octokit) reject zero-byte files, and the directories will
+        // materialize when the first article / asset commit lands anyway.
+        progress?.Report("Writing .wiki-meta.yml…");
         var meta = BuildMetaYaml(identifier, account, login);
         await gh.Repository.Content.CreateFile(login, repoName, MetaFileName,
             new CreateFileRequest(
@@ -106,13 +115,8 @@ public sealed class GitHubWorkspaceService : IGitHubWorkspaceService
                 content: meta,
                 branch:  branch));
 
-        // Empty articles/ + assets/ tree (GitHub requires a file to materialize a dir) -
-        await gh.Repository.Content.CreateFile(login, repoName, "articles/.gitkeep",
-            new CreateFileRequest("chore: scaffold articles/", "", branch));
-        await gh.Repository.Content.CreateFile(login, repoName, "assets/.gitkeep",
-            new CreateFileRequest("chore: scaffold assets/", "", branch));
-
         // README ----------------------------------------------------------------
+        progress?.Report("Replacing the README…");
         var readme = BuildReadme(account, login, identifier);
         await gh.Repository.Content.UpdateFile(login, repoName, "README.md",
             new UpdateFileRequest(
@@ -122,6 +126,7 @@ public sealed class GitHubWorkspaceService : IGitHubWorkspaceService
                 branch:  branch));
 
         // Topic so discovery picks it up ---------------------------------------
+        progress?.Report("Applying the encyclopedia-wiki topic…");
         await gh.Repository.ReplaceAllTopics(login, repoName, new RepositoryTopics(new[] { DiscoveryTopic }));
 
         return new WorkspaceRepo

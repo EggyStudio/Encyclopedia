@@ -1,60 +1,133 @@
 @page "/wiki/{Identifier}"
 @attribute [ReaderPage("article", "/wiki/{Identifier}", UseBlazorRouter = true, Title = "Article")]
 @namespace Encyclopedia.Components.Pages
-@inject ICrossLinkIndexService CrossLinks
+@inject EncyclopediaDbContext Db
 @inject IArticleParserService Parser
-@inject IAssetResolver AssetResolver
 
-@using ModelArticle = Encyclopedia.Models.Article
+@using System.Text.Json
+@using Microsoft.EntityFrameworkCore
+@using Encyclopedia.Models
+@using Encyclopedia.Services.Database
 
-<PageTitle>@(_loaded?.Frontmatter.Title ?? Identifier)</PageTitle>
+<PageTitle>@(_frontmatter?.Title ?? Identifier) · Encyclopedia</PageTitle>
 
-@if (_loaded is null)
+@if (_loading)
 {
     <p>Loading…</p>
+}
+else if (_frontmatter is null)
+{
+    <BbCard>
+        <BbCardHeader>
+            <BbCardTitle>Article not found</BbCardTitle>
+            <BbCardDescription>
+                No article with identifier <code>@Identifier</code> exists in
+                the local index. It may not have been synced yet, or the
+                identifier might be misspelled.
+            </BbCardDescription>
+        </BbCardHeader>
+        <BbCardContent>
+            <BbButton Variant="ButtonVariant.Outline" OnClick="@(() => Nav.NavigateTo("/discover"))">Back to Discover</BbButton>
+        </BbCardContent>
+    </BbCard>
 }
 else
 {
     <article class="wiki-article">
         <header class="wiki-article-head">
-            <h1>@_loaded.Frontmatter.Title</h1>
-            @if (!string.IsNullOrEmpty(_loaded.Frontmatter.Summary))
+            <h1>@_frontmatter.Title</h1>
+            @if (!string.IsNullOrEmpty(_frontmatter.Summary))
             {
-                <p class="wiki-summary">@_loaded.Frontmatter.Summary</p>
+                <p class="wiki-summary">@_frontmatter.Summary</p>
+            }
+            @if (_frontmatter.Tags.Length > 0 || _frontmatter.Categories.Length > 0)
+            {
+                <p class="wiki-taxonomy muted">
+                    @foreach (var t in _frontmatter.Tags) { <span class="wiki-tag">#@t</span> }
+                    @foreach (var c in _frontmatter.Categories) { <span class="wiki-cat">@c</span> }
+                </p>
             }
         </header>
 
-        <aside class="wiki-toc">
-            <TableOfContents Markdown="@_loaded.RawMarkdown" />
-        </aside>
-
-        @if (_loaded.Frontmatter.InfoBox is not null)
-        {
-            <InfoBox Data="@_loaded.Frontmatter.InfoBox" SourceId="@_loaded.SourceId" />
-        }
-
         <div class="wiki-body">
-            <ArticleView Article="_loaded" />
+            @((MarkupString)_html)
         </div>
 
-        @if (_loaded.Frontmatter.Sources.Length > 0)
+        @if (_frontmatter.Sources.Length > 0)
         {
-            <SourceList Sources="@_loaded.Frontmatter.Sources" />
+            <section class="wiki-sources">
+                <h2>References</h2>
+                <ol>
+                    @foreach (var (s, i) in _frontmatter.Sources.Select((s, i) => (s, i + 1)))
+                    {
+                        <li id="ref-@i"><a href="@s" target="_blank" rel="noopener noreferrer">@s</a></li>
+                    }
+                </ol>
+            </section>
         }
 
-        <Backlinks Identifier="@Identifier" />
+        <footer class="wiki-meta muted">
+            Source: <a href="https://github.com/@_sourceId/blob/@_branch/@_relativePath" target="_blank" rel="noopener">@_sourceId</a>
+            @if (_fetchedAt is { } f)
+            {
+                <span> · last synced @f.ToString("yyyy-MM-dd HH:mm 'UTC'")</span>
+            }
+        </footer>
     </article>
 }
 
 @code {
+    [Inject] private NavigationManager Nav { get; set; } = default!;
+
     [Parameter] public string Identifier { get; set; } = "";
 
-    private ModelArticle? _loaded;
+    private bool _loading = true;
+    private Frontmatter? _frontmatter;
+    private string _html = "";
+    private string _sourceId = "";
+    private string _branch = "main";
+    private string _relativePath = "";
+    private DateTime? _fetchedAt;
 
     protected override async Task OnParametersSetAsync()
     {
-        // TODO: load article by identifier from db, hand off to ArticleView.
-        _loaded = null;
-        await Task.CompletedTask;
+        _loading = true;
+        _frontmatter = null;
+
+        var row = await Db.Articles.AsNoTracking().FirstOrDefaultAsync(a => a.Identifier == Identifier);
+        if (row is null)
+        {
+            _loading = false;
+            return;
+        }
+
+        try
+        {
+            _frontmatter = JsonSerializer.Deserialize<Frontmatter>(row.FrontmatterJson,
+                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        }
+        catch { _frontmatter = null; }
+
+        if (_frontmatter is null)
+        {
+            _loading = false;
+            return;
+        }
+
+        _html = Parser.RenderHtml(row.BodyMarkdown, new ArticleRenderContext
+        {
+            SourceId        = row.SourceId,
+            Identifier      = row.Identifier,
+            IdentifierIndex = new Dictionary<string, string>(),
+            AssetIndex      = new Dictionary<string, string>(),
+        });
+        _sourceId     = row.SourceId;
+        _relativePath = row.RelativePath;
+        _fetchedAt    = row.FetchedAt;
+
+        var source = await Db.WikiSources.AsNoTracking().FirstOrDefaultAsync(s => s.Id == row.SourceId);
+        if (source is not null) _branch = source.DefaultBranch;
+
+        _loading = false;
     }
 }

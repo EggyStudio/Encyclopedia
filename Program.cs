@@ -83,6 +83,7 @@ builder.Services.AddScoped<IGitHubRepoDiscoveryService, GitHubRepoDiscoveryServi
 builder.Services.AddScoped<IWikiSourceRegistry,        WikiSourceRegistry>();
 builder.Services.AddScoped<IArticleFetchService,       ArticleFetchService>();
 builder.Services.AddSingleton<IArticleParserService,   ArticleParserService>();
+builder.Services.AddScoped<IWorkspaceSyncService,      WorkspaceSyncService>();
 builder.Services.AddScoped<ICrossLinkIndexService,     CrossLinkIndexService>();
 builder.Services.AddSingleton<IGitHubAssetProvider,    GitHubAssetProvider>();
 builder.Services.AddSingleton<ICloudflareR2AssetProvider, CloudflareR2AssetProvider>();
@@ -144,5 +145,29 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok", utc = DateTime.UtcNo
 
 app.MapRazorComponents<Encyclopedia.Components.App>()
    .AddInteractiveServerRenderMode();
+
+// Apply the schema on startup. 001_init.sql uses IF NOT EXISTS / CREATE OR
+// REPLACE throughout, so running it every boot is a no-op once the tables
+// are in place. We swallow failures here so the app can still serve cached
+// content if Postgres is briefly unreachable - actual queries will surface
+// the real error if it persists.
+{
+    var migrationPath = Path.Combine(app.Environment.ContentRootPath, "db", "migrations", "001_init.sql");
+    if (File.Exists(migrationPath))
+    {
+        try
+        {
+            await using var scope = app.Services.CreateAsyncScope();
+            var db  = scope.ServiceProvider.GetRequiredService<EncyclopediaDbContext>();
+            var sql = await File.ReadAllTextAsync(migrationPath);
+            await db.Database.ExecuteSqlRawAsync(sql);
+            app.Logger.LogInformation("Database schema ensured ({Path})", migrationPath);
+        }
+        catch (Exception ex)
+        {
+            app.Logger.LogError(ex, "Could not apply schema from {Path}", migrationPath);
+        }
+    }
+}
 
 app.Run();

@@ -58,6 +58,45 @@ body { margin: 0; font-family: var(--reader-sans); }
 .error { color: #b91c1c; }
 .muted { color: var(--muted-foreground, #6b7280); font-weight: 400; }
 
+/* ---------- Home + Discover ---------- */
+.home-hero        { padding: 2rem 0 1rem; text-align: center; }
+.home-hero h1     { font-size: 2.5rem; margin: 0 0 0.5rem; }
+.home-hero .cta   { display: inline-block; margin-top: 1rem; padding: 0.6rem 1.2rem; background: var(--primary, #2563eb); color: var(--primary-foreground, #fff); border-radius: 6px; text-decoration: none; font-weight: 600; }
+.home-featured    { margin-top: 2rem; }
+.home-featured h2 { font-size: 1.4rem; margin-bottom: 1rem; }
+
+.article-list             { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 1.25rem; }
+.article-list > li        { padding: 1rem; border: 1px solid var(--border, #e5e7eb); border-radius: 8px; font-family: var(--reader-sans); }
+.article-list-title       { font-size: 1.15rem; font-weight: 600; text-decoration: none; color: inherit; }
+.article-list-title:hover { text-decoration: underline; }
+.article-list-summary     { margin: 0.4rem 0; }
+.article-list-meta        { margin: 0; font-size: 0.85rem; }
+
+.wiki-source-list             { list-style: none; padding: 0; margin: 1.5rem 0; display: flex; flex-direction: column; gap: 1rem; font-family: var(--reader-sans); }
+.wiki-source-list > li        { padding: 1rem; border: 1px solid var(--border, #e5e7eb); border-radius: 8px; }
+.wiki-source-list h3          { margin: 0 0 0.25rem; display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+.wiki-source-list h3 a        { color: inherit; }
+.wiki-source-title            { margin: 0.25rem 0; font-weight: 500; }
+.wiki-source-desc             { margin: 0.25rem 0; font-size: 0.95rem; }
+.wiki-source-trust            { font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 999px; text-transform: uppercase; letter-spacing: 0.05em; }
+.trust-verified               { background: #dcfce7; color: #166534; }
+.trust-optin                  { background: #dbeafe; color: #1d4ed8; }
+.trust-discovered             { background: #fef3c7; color: #92400e; }
+
+.wiki-taxonomy span           { margin-right: 0.5rem; font-size: 0.85rem; }
+.wiki-tag                     { color: var(--muted-foreground, #6b7280); }
+.wiki-cat                     { color: var(--muted-foreground, #6b7280); font-weight: 500; }
+
+.wiki-body p                  { margin: 0 0 1rem; }
+.wiki-body h2, .wiki-body h3, .wiki-body h4 { margin-top: 1.5rem; }
+.wiki-body code               { background: var(--accent, #f3f4f6); padding: 0.1em 0.3em; border-radius: 3px; font-size: 0.9em; }
+.wiki-body pre                { background: var(--accent, #f3f4f6); padding: 0.75rem; border-radius: 6px; overflow-x: auto; }
+.wiki-body pre code           { background: transparent; padding: 0; }
+.wiki-body blockquote         { border-left: 3px solid var(--border, #e5e7eb); margin: 1rem 0; padding-left: 1rem; color: var(--muted-foreground, #6b7280); }
+.wiki-body img                { max-width: 100%; height: auto; }
+
+.wiki-meta                    { margin-top: 2rem; font-size: 0.85rem; }
+
 /* ---------- Auth pages ---------- */
 .auth-page    { font-family: var(--reader-sans); }
 .auth-header  { margin-bottom: 1.5rem; }
@@ -67,6 +106,32 @@ body { margin: 0; font-family: var(--reader-sans); }
 .auth-form    { display: flex; flex-direction: column; gap: 0.85rem; }
 .auth-field   { display: flex; flex-direction: column; gap: 0.35rem; }
 .auth-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.25rem; }
+
+.auth-steps        { list-style: none; counter-reset: step; padding: 0; margin: 0 0 1rem; display: flex; flex-direction: column; gap: 1.25rem; }
+.auth-steps > li   { counter-increment: step; display: grid; grid-template-columns: 2rem 1fr; gap: 0.75rem; align-items: start; }
+.auth-steps > li::before {
+    content: counter(step);
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2rem; height: 2rem; border-radius: 999px;
+    background: var(--accent, #f3f4f6); color: var(--foreground, #111);
+    font-weight: 600; font-size: 0.9rem;
+}
+.auth-steps > li > * { grid-column: 2; }
+.auth-steps > li > *:first-child { margin-top: 0.25rem; }
+.auth-steps p      { margin: 0 0 0.6rem; color: var(--muted-foreground, #6b7280); font-size: 0.95rem; }
+
+.auth-disclosure   { margin-top: 1rem; font-size: 0.9rem; color: var(--muted-foreground, #6b7280); }
+.auth-disclosure summary { cursor: pointer; padding: 0.25rem 0; }
+.auth-disclosure p { margin: 0.5rem 0 0; line-height: 1.5; }
+
+.workspace-progress { margin: 0.6rem 0 0; font-size: 0.9rem; }
+.workspace-progress::before {
+    content: ""; display: inline-block; width: 0.8em; height: 0.8em;
+    border: 2px solid currentColor; border-right-color: transparent;
+    border-radius: 50%; margin-right: 0.5em; vertical-align: -0.1em;
+    animation: workspace-spin 0.8s linear infinite;
+}
+@keyframes workspace-spin { to { transform: rotate(360deg); } }
 
 /* ---------- Profile ---------- */
 .profile-grid     { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 1.25rem; font-family: var(--reader-sans); }
